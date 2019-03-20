@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import List.Zipper exposing (..)
+import List.Zipper as LZ exposing (Zipper)
 
 
 main =
@@ -84,10 +84,46 @@ view model =
 
 
 viewDeck : Bool -> Maybe (Zipper Card) -> Html Msg
-viewDeck isFocused deck =
-    div [ id "deck" ] [ text "DECK" ]
+viewDeck isFocused deck_ =
+    ul [ id "deck" ]
+        (case deck_ of
+            Nothing ->
+                []
+
+            Just deck ->
+                List.map viewDeckCard <| LZ.toList <| deck
+        )
 
 
 viewWorkSurface : Bool -> Maybe (Zipper ( Card, CardState )) -> Html Msg
-viewWorkSurface isFocused workSurface =
-    div [ id "work-surface" ] [ text "WORKSURFACE" ]
+viewWorkSurface isFocused workSurface_ =
+    ul [ id "work-surface" ]
+        (case workSurface_ of
+            Nothing ->
+                []
+
+            Just workSurface ->
+                List.map viewDeckCard <| List.map Tuple.first <| LZ.toList <| workSurface
+        )
+
+
+
+-- CARD VIEWS
+
+
+viewDeckCard : Card -> Html Msg
+viewDeckCard ({ title, content } as card) =
+    li [ id <| "card-" ++ String.fromInt card.id ]
+        [ h3 [] [ text title ]
+        , div [] [ text content ]
+        ]
+
+
+viewNormalCard : Card -> Html Msg
+viewNormalCard card =
+    viewDeckCard card
+
+
+viewEditingCard : Card -> Html Msg
+viewEditingCard card =
+    viewDeckCard card
