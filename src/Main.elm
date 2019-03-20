@@ -42,8 +42,8 @@ type Focus
 
 
 defaultModel =
-    { deck = Nothing
-    , workSurface = Nothing
+    { deck = [ Card 0 "Test" "content" ] |> LZ.fromList
+    , workSurface = [ ( Card 1 "Test 2" "content again", Normal ) ] |> LZ.fromList
     , deckSearchField = ""
     , focus = WorkSurface
     }
