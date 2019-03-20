@@ -85,7 +85,7 @@ view model =
 
 viewDeck : Bool -> Maybe (Zipper Card) -> Html Msg
 viewDeck isFocused deck_ =
-    ul [ id "deck" ]
+    div [ id "deck" ]
         (case deck_ of
             Nothing ->
                 []
@@ -97,7 +97,7 @@ viewDeck isFocused deck_ =
 
 viewWorkSurface : Bool -> Maybe (Zipper ( Card, CardState )) -> Html Msg
 viewWorkSurface isFocused workSurface_ =
-    ul [ id "work-surface" ]
+    div [ id "work-surface" ]
         (case workSurface_ of
             Nothing ->
                 []
@@ -113,7 +113,7 @@ viewWorkSurface isFocused workSurface_ =
 
 viewDeckCard : Card -> Html Msg
 viewDeckCard ({ title, content } as card) =
-    li [ id <| "card-" ++ String.fromInt card.id ]
+    div [ id <| "card-" ++ String.fromInt card.id, class "card" ]
         [ h3 [] [ text title ]
         , div [] [ text content ]
         ]
