@@ -3,12 +3,16 @@
   width: 100%;
   height: 100%;
   display : grid;
+  grid-gap: 10px;
+  grid-template-columns: 250px auto;
   background-color: rgb(128,128,128);
+  perspective: 1000px;
 }
 
 #deck {
   grid-row : 1/2;
   grid-column: 1/2;
+  padding-left: 20px;
 }
 
 #work-surface {
@@ -20,5 +24,14 @@
   padding: 20px;
   background-color: rgb(230, 230, 235);
   border-radius: 3px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+
+.deck-card {
+  font-size: 50%;
+  padding: 10px;
+  margin-top: -10px;
+  background-color: rgb(230, 230, 235);
+  transform: rotateX(-10deg);
   box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
 }

@@ -42,7 +42,7 @@ type Focus
 
 
 defaultModel =
-    { deck = [ Card 0 "Test" "content" ] |> LZ.fromList
+    { deck = [ Card 0 "Test" "content", Card 2 "Second" "more stuff here and this one is longer" ] |> LZ.fromList
     , workSurface = [ ( Card 1 "Test 2" "content again", Normal ) ] |> LZ.fromList
     , deckSearchField = ""
     , focus = WorkSurface
@@ -103,7 +103,7 @@ viewWorkSurface isFocused workSurface_ =
                 []
 
             Just workSurface ->
-                List.map viewDeckCard <| List.map Tuple.first <| LZ.toList <| workSurface
+                List.map viewNormalCard <| List.map Tuple.first <| LZ.toList <| workSurface
         )
 
 
@@ -113,15 +113,18 @@ viewWorkSurface isFocused workSurface_ =
 
 viewDeckCard : Card -> Html Msg
 viewDeckCard ({ title, content } as card) =
-    div [ id <| "card-" ++ String.fromInt card.id, class "card" ]
+    div [ id <| "card-" ++ String.fromInt card.id, class "deck-card" ]
         [ h3 [] [ text title ]
         , div [] [ text content ]
         ]
 
 
 viewNormalCard : Card -> Html Msg
-viewNormalCard card =
-    viewDeckCard card
+viewNormalCard ({ title, content } as card) =
+    div [ id <| "card-" ++ String.fromInt card.id, class "card" ]
+        [ h3 [] [ text title ]
+        , div [] [ text content ]
+        ]
 
 
 viewEditingCard : Card -> Html Msg
