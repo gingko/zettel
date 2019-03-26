@@ -1,4 +1,4 @@
-module Deck exposing (Deck, fromList, move, moveWithPosition, next, previous, sort, toList)
+module Deck exposing (Deck, current, fromList, move, moveWithPosition, next, previous, sort, toList)
 
 import List.Zipper as LZ exposing (Zipper(..))
 import Types exposing (..)
@@ -32,6 +32,16 @@ move conv ( fromDeck, toDeck ) =
 moveWithPosition : (a -> b) -> RelativePosition Int -> ( Deck a, Deck b ) -> ( Deck a, Deck b )
 moveWithPosition conv pos ( fromDeck, toDeck ) =
     ( fromDeck, toDeck )
+
+
+current : Deck a -> Maybe a
+current (Deck mbz_) =
+    case mbz_ of
+        Nothing ->
+            Nothing
+
+        Just zip ->
+            Just (LZ.current zip |> Tuple.first)
 
 
 next : Deck a -> Deck a

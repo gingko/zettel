@@ -36,3 +36,7 @@
   transform: rotateX(-10deg);
   box-shadow: 0 0px 6px rgba(0,0,0,0.16), 0 0px 6px rgba(0,0,0,0.23);
 }
+
+.current {
+  box-shadow : 0 0 8px green;
+}
