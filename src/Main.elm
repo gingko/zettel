@@ -67,6 +67,7 @@ type Msg
     | PullSelectedFromDeck
     | AddSelectedToDeck
     | SetFocus Focus
+    | SelectCard Focus Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -86,6 +87,18 @@ update msg ({ workSurface, deck } as model) =
             in
             ( { model | deck = newDeck, workSurface = newWorkSurface }, Cmd.none )
 
+        SelectCard focus cardId ->
+            case focus of
+                Deck ->
+                    ( { model | deck = Deck.select (\c -> cardId == c.id) deck, focus = focus }
+                    , Cmd.none
+                    )
+
+                WorkSurface ->
+                    ( { model | workSurface = Deck.select (\( c, _ ) -> cardId == c.id) workSurface, focus = focus }
+                    , Cmd.none
+                    )
+
         _ ->
             ( model, Cmd.none )
 
@@ -98,7 +111,7 @@ view : Model -> Html Msg
 view { deck, workSurface, focus } =
     div [ id "app" ]
         [ viewDeck (focus == Deck) ( Deck.current deck, deck |> Deck.toList )
-        , viewWorkSurface (focus == WorkSurface) (workSurface |> Deck.toList)
+        , viewWorkSurface (focus == WorkSurface) ( Deck.current workSurface |> Maybe.map Tuple.first, workSurface |> Deck.toList )
         , button [ onClick PullSelectedFromDeck ] [ text "→" ]
         , button [ onClick AddSelectedToDeck ] [ text "←" ]
         ]
@@ -119,12 +132,21 @@ viewDeck deckFocused ( currentCard_, cards ) =
         (List.map viewFn cards)
 
 
-viewWorkSurface : Bool -> List ( Card, CardState ) -> Html Msg
-viewWorkSurface isFocused cards =
+viewWorkSurface : Bool -> ( Maybe Card, List ( Card, CardState ) ) -> Html Msg
+viewWorkSurface workSurfaceFocused ( currentCard_, cards ) =
+    let
+        viewFn c =
+            case currentCard_ of
+                Just currentCard ->
+                    viewNormalCard (workSurfaceFocused && c.id == currentCard.id) c
+
+                Nothing ->
+                    viewNormalCard False c
+    in
     div [ id "work-surface" ]
         (cards
             |> List.map Tuple.first
-            |> List.map viewNormalCard
+            |> List.map viewFn
         )
 
 
@@ -137,15 +159,20 @@ viewDeckCard isCurrent ({ title, content } as card) =
     div
         [ id <| "card-" ++ String.fromInt card.id
         , classList [ ( "deck-card", True ), ( "current", isCurrent ) ]
+        , onClick (SelectCard Deck card.id)
         ]
         [ h3 [] [ text title ]
         , div [] [ text content ]
         ]
 
 
-viewNormalCard : Card -> Html Msg
-viewNormalCard ({ title, content } as card) =
-    div [ id <| "card-" ++ String.fromInt card.id, class "card" ]
+viewNormalCard : Bool -> Card -> Html Msg
+viewNormalCard isCurrent ({ title, content } as card) =
+    div
+        [ id <| "card-" ++ String.fromInt card.id
+        , classList [ ( "card", True ), ( "current", isCurrent ) ]
+        , onClick (SelectCard WorkSurface card.id)
+        ]
         [ h3 [] [ text title ]
         , div [] [ text content ]
         ]

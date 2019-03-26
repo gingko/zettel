@@ -1,4 +1,4 @@
-module Deck exposing (Deck, current, fromList, move, moveWithPosition, next, previous, sort, toList)
+module Deck exposing (Deck, current, fromList, move, moveWithPosition, next, previous, select, sort, toList)
 
 import List.Zipper as LZ exposing (Zipper(..))
 import Types exposing (..)
@@ -42,6 +42,18 @@ current (Deck mbz_) =
 
         Just zip ->
             Just (LZ.current zip |> Tuple.first)
+
+
+select : (a -> Bool) -> Deck a -> Deck a
+select predicate (Deck mbz_) =
+    case mbz_ of
+        Nothing ->
+            Deck Nothing
+
+        Just zip ->
+            zip
+                |> LZ.findFirst (Tuple.first >> predicate)
+                |> Deck
 
 
 next : Deck a -> Deck a
