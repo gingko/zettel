@@ -64,7 +64,7 @@ init _ =
 type Msg
     = NewCard
     | Edit
-    | PullFromDeck
+    | PullSelectedFromDeck
     | AddSelectedToDeck
     | SetFocus Focus
 
@@ -72,6 +72,13 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({ workSurface, deck } as model) =
     case msg of
+        PullSelectedFromDeck ->
+            let
+                ( newDeck, newWorkSurface ) =
+                    Deck.move (\c -> ( c, Normal )) ( deck, workSurface )
+            in
+            ( { model | deck = newDeck, workSurface = newWorkSurface }, Cmd.none )
+
         AddSelectedToDeck ->
             let
                 ( newWorkSurface, newDeck ) =
@@ -96,6 +103,7 @@ view model =
     div [ id "app" ]
         [ viewDeck (model.focus == Deck) (model.deck |> Deck.toList)
         , viewWorkSurface (model.focus == WorkSurface) (model.workSurface |> Deck.toList)
+        , button [ onClick PullSelectedFromDeck ] [ text "→" ]
         , button [ onClick AddSelectedToDeck ] [ text "←" ]
         ]
 
