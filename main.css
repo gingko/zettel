@@ -18,6 +18,7 @@
 #work-surface {
   grid-row : 1/2;
   grid-column: 2/3;
+  padding-right: 20px;
 }
 
 .card {
@@ -33,5 +34,5 @@
   margin-top: -10px;
   background-color: rgb(230, 230, 235);
   transform: rotateX(-10deg);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  box-shadow: 0 0px 6px rgba(0,0,0,0.16), 0 0px 6px rgba(0,0,0,0.23);
 }

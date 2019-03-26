@@ -1,9 +1,11 @@
 module Main exposing (main)
 
 import Browser
+import Deck exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import List.Zipper as LZ exposing (Zipper)
+import Types exposing (..)
 
 
 main =
@@ -20,20 +22,20 @@ main =
 
 
 type alias Model =
-    { deck : Maybe (Zipper Card)
-    , workSurface : Maybe (Zipper ( Card, CardState ))
+    { deck : Deck Card
+    , workSurface : Deck ( Card, CardState )
     , deckSearchField : String
     , focus : Focus
     }
 
 
+type alias Card =
+    { id : Int, title : String, content : String }
+
+
 type CardState
     = Normal
     | Editing
-
-
-type alias Card =
-    { id : Int, title : String, content : String }
 
 
 type Focus
@@ -42,8 +44,8 @@ type Focus
 
 
 defaultModel =
-    { deck = [ Card 0 "Test" "content", Card 2 "Second" "more stuff here and this one is longer" ] |> LZ.fromList
-    , workSurface = [ ( Card 1 "Test 2" "content again", Normal ) ] |> LZ.fromList
+    { deck = [ Card 0 "Test" "content", Card 2 "Second" "more stuff here and this one is longer" ] |> Deck.fromList
+    , workSurface = [ ( Card 1 "Test 2" "content again", Normal ) ] |> Deck.fromList
     , deckSearchField = ""
     , focus = WorkSurface
     }
@@ -78,32 +80,23 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div [ id "app" ]
-        [ viewDeck (model.focus == Deck) model.deck
-        , viewWorkSurface (model.focus == WorkSurface) model.workSurface
+        [ viewDeck (model.focus == Deck) (model.deck |> Deck.toList)
+        , viewWorkSurface (model.focus == WorkSurface) (model.workSurface |> Deck.toList)
         ]
 
 
-viewDeck : Bool -> Maybe (Zipper Card) -> Html Msg
-viewDeck isFocused deck_ =
+viewDeck : Bool -> List Card -> Html Msg
+viewDeck isFocused cards =
     div [ id "deck" ]
-        (case deck_ of
-            Nothing ->
-                []
-
-            Just deck ->
-                List.map viewDeckCard <| LZ.toList <| deck
-        )
+        (List.map viewDeckCard cards)
 
 
-viewWorkSurface : Bool -> Maybe (Zipper ( Card, CardState )) -> Html Msg
-viewWorkSurface isFocused workSurface_ =
+viewWorkSurface : Bool -> List ( Card, CardState ) -> Html Msg
+viewWorkSurface isFocused cards =
     div [ id "work-surface" ]
-        (case workSurface_ of
-            Nothing ->
-                []
-
-            Just workSurface ->
-                List.map viewNormalCard <| List.map Tuple.first <| LZ.toList <| workSurface
+        (cards
+            |> List.map Tuple.first
+            |> List.map viewNormalCard
         )
 
 
