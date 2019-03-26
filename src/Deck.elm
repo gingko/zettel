@@ -1,16 +1,32 @@
 module Deck exposing (Deck, fromList, move, moveWithPosition, next, previous, sort, toList)
 
-import List.Zipper as LZ exposing (Zipper)
+import List.Zipper as LZ exposing (Zipper(..))
 import Types exposing (..)
 
 
 type Deck a
-    = Deck (Maybe (Zipper ( a, { herePosition : Int, otherPosition : Maybe Int } )))
+    = Deck (Maybe (Zipper ( a, Positions )))
+
+
+type alias Positions =
+    { herePosition : Int, otherPosition : Maybe Int }
 
 
 move : (a -> b) -> ( Deck a, Deck b ) -> ( Deck a, Deck b )
 move conv ( fromDeck, toDeck ) =
-    ( fromDeck, toDeck )
+    case ( fromDeck, toDeck ) of
+        ( Deck Nothing, Deck mbzTo_ ) ->
+            ( fromDeck, toDeck )
+
+        ( Deck (Just (Zipper bef ( curr, currPos ) aft)), Deck Nothing ) ->
+            ( bef ++ aft |> LZ.fromList |> Deck
+            , Deck (Just (Zipper [] ( conv curr, { herePosition = currPos.otherPosition |> Maybe.withDefault 0, otherPosition = Just currPos.herePosition } ) []))
+            )
+
+        ( Deck (Just (Zipper bef ( curr, currPos ) aft)), Deck (Just (Zipper befTo currTo aftTo)) ) ->
+            ( bef ++ aft |> LZ.fromList |> Deck
+            , Deck (Just (Zipper (befTo ++ [ currTo ]) ( conv curr, { herePosition = currPos.otherPosition |> Maybe.withDefault 0, otherPosition = Just currPos.herePosition } ) aftTo))
+            )
 
 
 moveWithPosition : (a -> b) -> RelativePosition Int -> ( Deck a, Deck b ) -> ( Deck a, Deck b )

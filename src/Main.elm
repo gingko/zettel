@@ -4,6 +4,7 @@ import Browser
 import Deck exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import List.Zipper as LZ exposing (Zipper)
 import Types exposing (..)
 
@@ -64,13 +65,22 @@ type Msg
     = NewCard
     | Edit
     | PullFromDeck
-    | AddToDeck
+    | AddSelectedToDeck
     | SetFocus Focus
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    ( model, Cmd.none )
+update msg ({ workSurface, deck } as model) =
+    case msg of
+        AddSelectedToDeck ->
+            let
+                ( newWorkSurface, newDeck ) =
+                    Deck.move Tuple.first ( workSurface, deck )
+            in
+            ( { model | deck = newDeck, workSurface = newWorkSurface }, Cmd.none )
+
+        _ ->
+            ( model, Cmd.none )
 
 
 
@@ -86,6 +96,7 @@ view model =
     div [ id "app" ]
         [ viewDeck (model.focus == Deck) (model.deck |> Deck.toList)
         , viewWorkSurface (model.focus == WorkSurface) (model.workSurface |> Deck.toList)
+        , button [ onClick AddSelectedToDeck ] [ text "←" ]
         ]
 
 
