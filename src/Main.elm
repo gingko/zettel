@@ -79,6 +79,10 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
+    let
+        _ =
+            Debug.log "model" model
+    in
     div [ id "app" ]
         [ viewDeck (model.focus == Deck) (model.deck |> Deck.toList)
         , viewWorkSurface (model.focus == WorkSurface) (model.workSurface |> Deck.toList)

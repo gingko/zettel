@@ -40,15 +40,15 @@ fromList list =
             List.length list
 
         minInt =
-            -2 ^ 31
+            -(2 ^ 31)
 
         maxInt =
-            2 ^ 31 - 1
+            (2 ^ 31) - 1
 
         mapFn : Int -> a -> ( a, { herePosition : Int, otherPosition : Maybe Int } )
         mapFn i c =
             ( c
-            , { herePosition = minInt + (i + 1) * (maxInt - minInt) // (length + 1)
+            , { herePosition = minInt + ((maxInt - minInt) // (length + 1)) * (i + 1)
               , otherPosition = Nothing
               }
             )
