@@ -107,31 +107,15 @@ update msg ({ workSurface, deck, focus } as model) =
             let
                 ( newDeck, newWorkSurface ) =
                     Deck.move (\c -> ( c, Normal )) ( deck, workSurface )
-
-                maybeChangeFocus ( m, c ) =
-                    if Deck.isEmpty m.deck then
-                        ( { m | focus = OnWorkSurface }, c )
-
-                    else
-                        ( m, c )
             in
-            ( { model | deck = newDeck, workSurface = newWorkSurface }, Cmd.none )
-                |> maybeChangeFocus
+            ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnWorkSurface }, Cmd.none )
 
         ReturnSelectedToDeck ->
             let
                 ( newWorkSurface, newDeck ) =
                     Deck.move Tuple.first ( workSurface, deck )
-
-                maybeChangeFocus ( m, c ) =
-                    if Deck.isEmpty m.workSurface then
-                        ( { m | focus = OnDeck }, c )
-
-                    else
-                        ( m, c )
             in
-            ( { model | deck = newDeck, workSurface = newWorkSurface }, Cmd.none )
-                |> maybeChangeFocus
+            ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnDeck }, Cmd.none )
 
         SetFocus newFocus ->
             ( { model | focus = newFocus }, Cmd.none )
