@@ -48,7 +48,7 @@ defaultModel =
     { deck =
         Deck.fromList
             [ Card 0 "Test" "content"
-            , Card 2 "Second" "more stuff here and this one is longer"
+            , Card 2 "Second" "more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more."
             , Card 3 "Another test" "Let's have some content lorem ipsum."
             , Card 4 "YET Another test" "Let's have some content lorem ipsum."
             , Card 5 "Dolorum" "Let's have some content lorem ipsum."
@@ -198,7 +198,9 @@ viewDeck deckFocused ( currentCard_, cards ) =
                     viewDeckCard False c
     in
     div [ id "deck" ]
-        (List.map viewFn cards)
+        (List.map viewFn cards
+            ++ [ div [ class "deck-front" ] [] ]
+        )
 
 
 viewWorkSurface : Bool -> ( Maybe Card, List ( Card, CardState ) ) -> Html Msg
