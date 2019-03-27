@@ -153,11 +153,11 @@ update msg ({ workSurface, deck, focus } as model) =
                 ( "down", _ ) ->
                     update Next model
 
-                ( "alt+right", OnDeck ) ->
-                    update PullSelectedFromDeck model
-
                 ( "alt+left", OnWorkSurface ) ->
                     update ReturnSelectedToDeck model
+
+                ( "alt+right", OnDeck ) ->
+                    update PullSelectedFromDeck model
 
                 _ ->
                     ( model, Cmd.none )
@@ -175,8 +175,6 @@ view { deck, workSurface, focus } =
     div [ id "app" ]
         [ viewDeck (focus == OnDeck) ( Deck.current deck, deck |> Deck.toList )
         , viewWorkSurface (focus == OnWorkSurface) ( Deck.current workSurface |> Maybe.map Tuple.first, workSurface |> Deck.toList )
-        , button [ onClick PullSelectedFromDeck ] [ text "→" ]
-        , button [ onClick ReturnSelectedToDeck ] [ text "←" ]
         ]
 
 
