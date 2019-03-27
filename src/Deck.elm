@@ -1,4 +1,4 @@
-module Deck exposing (Deck, current, fromList, move, moveWithPosition, next, previous, select, sort, toList)
+module Deck exposing (Deck, current, fromList, isEmpty, move, moveWithPosition, next, previous, select, sort, toList)
 
 import List.Zipper as LZ exposing (Zipper(..))
 import Types exposing (..)
@@ -105,3 +105,8 @@ toList (Deck mbz_) =
 
         Nothing ->
             []
+
+
+isEmpty : Deck a -> Bool
+isEmpty (Deck mbz_) =
+    mbz_ == Nothing
