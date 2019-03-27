@@ -148,10 +148,10 @@ update msg ({ workSurface, deck, focus } as model) =
                     update (SetFocus OnWorkSurface) model
 
                 ( "up", _ ) ->
-                    update Next model
+                    update Previous model
 
                 ( "down", _ ) ->
-                    update Previous model
+                    update Next model
 
                 ( "alt+right", OnDeck ) ->
                     update PullSelectedFromDeck model

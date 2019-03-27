@@ -16,12 +16,17 @@
 document.addEventListener('DOMContentLoaded', initialize, false);
 
 const shortcuts = ["right","left", "up", "down", "alt+left","alt+right"];
+const needOverride= ["alt+left", "alt+right"];
 
 function initialize() {
   var app = Elm.Main.init({node : document.getElementById("app"), flags : null });
 
   Mousetrap.bind(shortcuts, function(e, s) {
     app.ports.keyboard.send(s);
+
+    if (needOverride.includes(s)) {
+      return false;
+    }
   });
 }
 

@@ -97,13 +97,31 @@ select predicate (Deck mbz_) =
 
 
 next : Deck a -> Deck a
-next deck =
-    deck
+next (Deck zip_) =
+    let
+        newZip_ =
+            zip_ |> Maybe.andThen LZ.next
+    in
+    case newZip_ of
+        Nothing ->
+            Deck zip_
+
+        Just newZip ->
+            Deck (Just newZip)
 
 
 previous : Deck a -> Deck a
-previous deck =
-    deck
+previous (Deck zip_) =
+    let
+        newZip_ =
+            zip_ |> Maybe.andThen LZ.previous
+    in
+    case newZip_ of
+        Nothing ->
+            Deck zip_
+
+        Just newZip ->
+            Deck (Just newZip)
 
 
 sort : SortOrder -> Bool -> Deck a -> Deck a
