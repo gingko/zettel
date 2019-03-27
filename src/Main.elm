@@ -40,15 +40,15 @@ type CardState
 
 
 type Focus
-    = Deck
-    | WorkSurface
+    = OnDeck
+    | OnWorkSurface
 
 
 defaultModel =
     { deck = [ Card 0 "Test" "content", Card 2 "Second" "more stuff here and this one is longer" ] |> Deck.fromList
     , workSurface = [ ( Card 1 "Test 2" "content again", Normal ) ] |> Deck.fromList
     , deckSearchField = ""
-    , focus = Deck
+    , focus = OnDeck
     }
 
 
@@ -65,7 +65,7 @@ type Msg
     = NewCard
     | Edit
     | PullSelectedFromDeck
-    | AddSelectedToDeck
+    | ReturnSelectedToDeck
     | SetFocus Focus
     | SelectCard Focus Int
 
@@ -80,21 +80,29 @@ update msg ({ workSurface, deck } as model) =
             in
             ( { model | deck = newDeck, workSurface = newWorkSurface }, Cmd.none )
 
-        AddSelectedToDeck ->
+        ReturnSelectedToDeck ->
             let
                 ( newWorkSurface, newDeck ) =
                     Deck.move Tuple.first ( workSurface, deck )
+
+                maybeChangeFocus ( m, c ) =
+                    if Deck.isEmpty m.workSurface then
+                        ( { m | focus = OnDeck }, c )
+
+                    else
+                        ( m, c )
             in
             ( { model | deck = newDeck, workSurface = newWorkSurface }, Cmd.none )
+                |> maybeChangeFocus
 
         SelectCard focus cardId ->
             case focus of
-                Deck ->
+                OnDeck ->
                     ( { model | deck = Deck.select (\c -> cardId == c.id) deck, focus = focus }
                     , Cmd.none
                     )
 
-                WorkSurface ->
+                OnWorkSurface ->
                     ( { model | workSurface = Deck.select (\( c, _ ) -> cardId == c.id) workSurface, focus = focus }
                     , Cmd.none
                     )
@@ -110,10 +118,10 @@ update msg ({ workSurface, deck } as model) =
 view : Model -> Html Msg
 view { deck, workSurface, focus } =
     div [ id "app" ]
-        [ viewDeck (focus == Deck) ( Deck.current deck, deck |> Deck.toList )
-        , viewWorkSurface (focus == WorkSurface) ( Deck.current workSurface |> Maybe.map Tuple.first, workSurface |> Deck.toList )
+        [ viewDeck (focus == OnDeck) ( Deck.current deck, deck |> Deck.toList )
+        , viewWorkSurface (focus == OnWorkSurface) ( Deck.current workSurface |> Maybe.map Tuple.first, workSurface |> Deck.toList )
         , button [ onClick PullSelectedFromDeck ] [ text "→" ]
-        , button [ onClick AddSelectedToDeck ] [ text "←" ]
+        , button [ onClick ReturnSelectedToDeck ] [ text "←" ]
         ]
 
 
@@ -159,7 +167,7 @@ viewDeckCard isCurrent ({ title, content } as card) =
     div
         [ id <| "card-" ++ String.fromInt card.id
         , classList [ ( "deck-card", True ), ( "current", isCurrent ) ]
-        , onClick (SelectCard Deck card.id)
+        , onClick (SelectCard OnDeck card.id)
         ]
         [ h3 [] [ text title ]
         , div [] [ text content ]
@@ -171,7 +179,7 @@ viewNormalCard isCurrent ({ title, content } as card) =
     div
         [ id <| "card-" ++ String.fromInt card.id
         , classList [ ( "card", True ), ( "current", isCurrent ) ]
-        , onClick (SelectCard WorkSurface card.id)
+        , onClick (SelectCard OnWorkSurface card.id)
         ]
         [ h3 [] [ text title ]
         , div [] [ text content ]
