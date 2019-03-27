@@ -20,7 +20,7 @@ move conv ( fromDeck, toDeck ) =
                 toMove =
                     LZ.current zipFrom
 
-                newFromCurrent =
+                ( newFromCurrent, _ ) =
                     getNext zipFrom
 
                 newToBefore =
@@ -36,8 +36,8 @@ move conv ( fromDeck, toDeck ) =
                 |> LZ.toList
                 |> List.filter (\i -> i /= toMove)
                 |> LZ.fromList
-                |> Maybe.andThen (LZ.findFirst (\i -> i == newFromCurrent))
                 |> Deck
+                |> select (\i -> i == newFromCurrent)
             , LZ.from newToBefore newToCurrent newToAfter
                 |> Just
                 |> Deck
@@ -48,7 +48,7 @@ move conv ( fromDeck, toDeck ) =
                 toMove =
                     LZ.current zipFrom
 
-                newFromCurrent =
+                ( newFromCurrent, _ ) =
                     getNext zipFrom
 
                 newToCurrent =
@@ -58,8 +58,8 @@ move conv ( fromDeck, toDeck ) =
                 |> LZ.toList
                 |> List.filter (\i -> i /= toMove)
                 |> LZ.fromList
-                |> Maybe.andThen (LZ.findFirst (\i -> i == newFromCurrent))
                 |> Deck
+                |> select (\i -> i == newFromCurrent)
             , LZ.fromCons newToCurrent []
                 |> Just
                 |> Deck
