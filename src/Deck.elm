@@ -15,18 +15,58 @@ type alias Positions =
 move : (a -> b) -> ( Deck a, Deck b ) -> ( Deck a, Deck b )
 move conv ( fromDeck, toDeck ) =
     case ( fromDeck, toDeck ) of
-        ( Deck Nothing, Deck mbzTo_ ) ->
+        ( Deck (Just zipFrom), Deck (Just zipTo) ) ->
+            let
+                toMove =
+                    LZ.current zipFrom
+
+                newFromCurrent =
+                    getNext zipFrom
+
+                newToBefore =
+                    LZ.before zipTo ++ [ LZ.current zipTo ]
+
+                newToCurrent =
+                    Tuple.mapFirst conv toMove
+
+                newToAfter =
+                    LZ.after zipTo
+            in
+            ( zipFrom
+                |> LZ.toList
+                |> List.filter (\i -> i /= toMove)
+                |> LZ.fromList
+                |> Maybe.andThen (LZ.findFirst (\i -> i == newFromCurrent))
+                |> Deck
+            , LZ.from newToBefore newToCurrent newToAfter
+                |> Just
+                |> Deck
+            )
+
+        ( Deck (Just zipFrom), Deck Nothing ) ->
+            let
+                toMove =
+                    LZ.current zipFrom
+
+                newFromCurrent =
+                    getNext zipFrom
+
+                newToCurrent =
+                    Tuple.mapFirst conv toMove
+            in
+            ( zipFrom
+                |> LZ.toList
+                |> List.filter (\i -> i /= toMove)
+                |> LZ.fromList
+                |> Maybe.andThen (LZ.findFirst (\i -> i == newFromCurrent))
+                |> Deck
+            , LZ.fromCons newToCurrent []
+                |> Just
+                |> Deck
+            )
+
+        ( Deck Nothing, _ ) ->
             ( fromDeck, toDeck )
-
-        ( Deck (Just (Zipper bef ( curr, currPos ) aft)), Deck Nothing ) ->
-            ( bef ++ aft |> LZ.fromList |> Deck
-            , Deck (Just (Zipper [] ( conv curr, { herePosition = currPos.otherPosition |> Maybe.withDefault 0, otherPosition = Just currPos.herePosition } ) []))
-            )
-
-        ( Deck (Just (Zipper bef ( curr, currPos ) aft)), Deck (Just (Zipper befTo currTo aftTo)) ) ->
-            ( bef ++ aft |> LZ.fromList |> Deck
-            , Deck (Just (Zipper (befTo ++ [ currTo ]) ( conv curr, { herePosition = currPos.otherPosition |> Maybe.withDefault 0, otherPosition = Just currPos.herePosition } ) aftTo))
-            )
 
 
 moveWithPosition : (a -> b) -> RelativePosition Int -> ( Deck a, Deck b ) -> ( Deck a, Deck b )
@@ -110,3 +150,20 @@ toList (Deck mbz_) =
 isEmpty : Deck a -> Bool
 isEmpty (Deck mbz_) =
     mbz_ == Nothing
+
+
+
+-- PRIVATE HELPERS
+
+
+getNext : Zipper a -> a
+getNext zip =
+    case ( LZ.next zip, LZ.previous zip ) of
+        ( Just nextZip, _ ) ->
+            LZ.current nextZip
+
+        ( Nothing, Just prevZip ) ->
+            LZ.current prevZip
+
+        ( Nothing, Nothing ) ->
+            LZ.current zip

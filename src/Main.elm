@@ -45,8 +45,18 @@ type Focus
 
 
 defaultModel =
-    { deck = [ Card 0 "Test" "content", Card 2 "Second" "more stuff here and this one is longer" ] |> Deck.fromList
-    , workSurface = [ ( Card 1 "Test 2" "content again", Normal ) ] |> Deck.fromList
+    { deck =
+        Deck.fromList
+            [ Card 0 "Test" "content"
+            , Card 2 "Second" "more stuff here and this one is longer"
+            , Card 3 "Another test" "Let's have some content lorem ipsum."
+            , Card 4 "YET Another test" "Let's have some content lorem ipsum."
+            , Card 5 "Dolorum" "Let's have some content lorem ipsum."
+            ]
+    , workSurface =
+        Deck.fromList
+            [ ( Card 1 "Test 2" "content again", Normal )
+            ]
     , deckSearchField = ""
     , focus = OnDeck
     }
