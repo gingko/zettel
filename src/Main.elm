@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser
 import Deck exposing (..)
@@ -14,7 +14,7 @@ main =
         { init = init
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         }
 
 
@@ -74,15 +74,34 @@ init _ =
 type Msg
     = NewCard
     | Edit
+    | Next
+    | Previous
     | PullSelectedFromDeck
     | ReturnSelectedToDeck
     | SetFocus Focus
     | SelectCard Focus Int
+    | Keyboard String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ workSurface, deck } as model) =
+update msg ({ workSurface, deck, focus } as model) =
     case msg of
+        Next ->
+            case focus of
+                OnDeck ->
+                    ( { model | deck = Deck.next deck }, Cmd.none )
+
+                OnWorkSurface ->
+                    ( { model | workSurface = Deck.next workSurface }, Cmd.none )
+
+        Previous ->
+            case focus of
+                OnDeck ->
+                    ( { model | deck = Deck.previous deck }, Cmd.none )
+
+                OnWorkSurface ->
+                    ( { model | workSurface = Deck.previous workSurface }, Cmd.none )
+
         PullSelectedFromDeck ->
             let
                 ( newDeck, newWorkSurface ) =
@@ -105,17 +124,43 @@ update msg ({ workSurface, deck } as model) =
             ( { model | deck = newDeck, workSurface = newWorkSurface }, Cmd.none )
                 |> maybeChangeFocus
 
-        SelectCard focus cardId ->
-            case focus of
+        SetFocus newFocus ->
+            ( { model | focus = newFocus }, Cmd.none )
+
+        SelectCard newFocus cardId ->
+            case newFocus of
                 OnDeck ->
-                    ( { model | deck = Deck.select (\c -> cardId == c.id) deck, focus = focus }
+                    ( { model | deck = Deck.select (\c -> cardId == c.id) deck, focus = newFocus }
                     , Cmd.none
                     )
 
                 OnWorkSurface ->
-                    ( { model | workSurface = Deck.select (\( c, _ ) -> cardId == c.id) workSurface, focus = focus }
+                    ( { model | workSurface = Deck.select (\( c, _ ) -> cardId == c.id) workSurface, focus = newFocus }
                     , Cmd.none
                     )
+
+        Keyboard keys ->
+            case ( keys, focus ) of
+                ( "left", OnWorkSurface ) ->
+                    update (SetFocus OnDeck) model
+
+                ( "right", OnDeck ) ->
+                    update (SetFocus OnWorkSurface) model
+
+                ( "up", _ ) ->
+                    update Next model
+
+                ( "down", _ ) ->
+                    update Previous model
+
+                ( "alt+right", OnDeck ) ->
+                    update PullSelectedFromDeck model
+
+                ( "alt+left", OnWorkSurface ) ->
+                    update ReturnSelectedToDeck model
+
+                _ ->
+                    ( model, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
@@ -199,3 +244,16 @@ viewNormalCard isCurrent ({ title, content } as card) =
 viewEditingCard : Card -> Html Msg
 viewEditingCard card =
     viewDeckCard True card
+
+
+
+-- SUBSCRIPTIONS
+
+
+port keyboard : (String -> msg) -> Sub msg
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.batch
+        [ keyboard Keyboard ]

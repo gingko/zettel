@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <script type="text/javascript" src="elm.js"></script>
+  <script type="text/javascript" src="vendor/mousetrap.min.js"></script>
   <link rel="stylesheet" href="normalize.css">
   <link rel="stylesheet" href="main.css">
 </head>
@@ -12,12 +13,19 @@
   <div id="app"></div>
 
 <script type="text/javascript">
+document.addEventListener('DOMContentLoaded', initialize, false);
+
+const shortcuts = ["right","left", "up", "down", "alt+left","alt+right"];
+
 function initialize() {
   var app = Elm.Main.init({node : document.getElementById("app"), flags : null });
+
+  Mousetrap.bind(shortcuts, function(e, s) {
+    app.ports.keyboard.send(s);
+  });
 }
 
 
-document.addEventListener('DOMContentLoaded', initialize, false);
 </script>
 
 </body>
