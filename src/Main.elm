@@ -5,6 +5,7 @@ import Deck exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import Html.Keyed as Keyed
 import List.Zipper as LZ exposing (Zipper)
 import Types exposing (..)
 
@@ -192,14 +193,15 @@ viewDeck deckFocused ( currentCard_, cards ) =
         viewFn c =
             case currentCard_ of
                 Just currentCard ->
-                    viewDeckCard (deckFocused && c.id == currentCard.id) c
+                    ( c.id |> String.fromInt, viewDeckCard (deckFocused && c.id == currentCard.id) c )
 
                 Nothing ->
-                    viewDeckCard False c
+                    ( c.id |> String.fromInt, viewDeckCard False c )
     in
-    div [ id "deck" ]
+    Keyed.node "div"
+        [ id "deck" ]
         (List.map viewFn cards
-            ++ [ div [ class "deck-front" ] [] ]
+            ++ [ ( "front", div [ class "deck-front" ] [] ) ]
         )
 
 
