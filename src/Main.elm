@@ -106,8 +106,16 @@ update msg ({ workSurface, deck, focus } as model) =
             let
                 ( newDeck, newWorkSurface ) =
                     Deck.move (\c -> ( c, Normal )) ( deck, workSurface )
+
+                maybeChangeFocus ( m, c ) =
+                    if Deck.isEmpty m.deck then
+                        ( { m | focus = OnWorkSurface }, c )
+
+                    else
+                        ( m, c )
             in
             ( { model | deck = newDeck, workSurface = newWorkSurface }, Cmd.none )
+                |> maybeChangeFocus
 
         ReturnSelectedToDeck ->
             let
