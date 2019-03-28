@@ -4,7 +4,7 @@
   height: 100%;
   display : grid;
   grid-gap: 10px;
-  grid-template-columns: 250px auto;
+  grid-template-columns: 30% auto;
   background-color: rgb(128,128,128);
 }
 
@@ -37,7 +37,7 @@
   overflow-y: hidden;
   background-color: rgb(230, 230, 235);
   transform: perspective(300px) rotateX(-10deg);
-  box-shadow: 0 0px 6px rgba(0,0,0,0.16), 0 0px 6px rgba(0,0,0,0.23);
+  box-shadow: 0 0px 4px rgba(0,0,0,0.16), 0 0px 4px rgba(0,0,0,0.23);
   transition: all 0.15s;
 }
 
@@ -46,7 +46,8 @@
   margin-top: -10px;
   background-color: rgb(128,128,128);
   transform: perspective(300px) rotateX(-10deg);
-  box-shadow: 0 -5px 4px rgba(0,0,0,0.16), 0 -3px 2px rgba(0,0,0,0.23);
+  box-shadow: 0 -4px 2px rgba(0,0,0,0.1), 0 -2px 2px rgba(0,0,0,0.2);
+  border-top: 1px solid #9e9e9e;
 }
 
 .current {
