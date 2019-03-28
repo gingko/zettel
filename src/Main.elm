@@ -32,7 +32,7 @@ type alias Model =
 
 
 type alias Card =
-    { id : Int, title : String, content : String }
+    { id : Int, title : String, content : String, deckPosition : Int, workSurfacePosition : Maybe Int }
 
 
 type CardState
@@ -48,15 +48,15 @@ type Focus
 defaultModel =
     { deck =
         Deck.fromList
-            [ Card 0 "Test" "content"
-            , Card 2 "Second" "more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more."
-            , Card 3 "Another test" "Let's have some content lorem ipsum."
-            , Card 4 "YET Another test" "Let's have some content lorem ipsum."
-            , Card 5 "Dolorum" "Let's have some content lorem ipsum."
+            [ Card 0 "Test" "content" -1000 Nothing
+            , Card 2 "Second" "more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more." -500 Nothing
+            , Card 3 "Another test" "Let's have some content lorem ipsum." 0 Nothing
+            , Card 4 "YET Another test" "Let's have some content lorem ipsum." 500 Nothing
+            , Card 5 "Dolorum" "Let's have some content lorem ipsum." 1000 Nothing
             ]
     , workSurface =
         Deck.fromList
-            [ ( Card 1 "Test 2" "content again", Normal )
+            [ ( Card 1 "Test 2" "content again" 250 (Just 0), Normal )
             ]
     , deckSearchField = ""
     , focus = OnDeck
@@ -114,6 +114,7 @@ update msg ({ workSurface, deck, focus } as model) =
                         newDeck =
                             deck
                                 |> Deck.remove
+                                |> Deck.sortBy .deckPosition
 
                         newWorkSurface =
                             workSurface
@@ -139,6 +140,7 @@ update msg ({ workSurface, deck, focus } as model) =
                         newDeck =
                             deck
                                 |> Deck.insert (Tuple.first selected)
+                                |> Deck.sortBy .deckPosition
                     in
                     ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnDeck }, Cmd.none )
 
