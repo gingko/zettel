@@ -105,17 +105,45 @@ update msg ({ workSurface, deck, focus } as model) =
 
         PullSelectedFromDeck ->
             let
-                ( newDeck, newWorkSurface ) =
-                    Deck.move (\c -> ( c, Normal )) ( deck, workSurface )
+                selected_ =
+                    Deck.current deck
             in
-            ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnWorkSurface }, Cmd.none )
+            case selected_ of
+                Just selected ->
+                    let
+                        newDeck =
+                            deck
+                                |> Deck.remove
+
+                        newWorkSurface =
+                            workSurface
+                                |> Deck.insert ( selected, Normal )
+                    in
+                    ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnWorkSurface }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         ReturnSelectedToDeck ->
             let
-                ( newWorkSurface, newDeck ) =
-                    Deck.move Tuple.first ( workSurface, deck )
+                selected_ =
+                    Deck.current workSurface
             in
-            ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnDeck }, Cmd.none )
+            case selected_ of
+                Just selected ->
+                    let
+                        newWorkSurface =
+                            workSurface
+                                |> Deck.remove
+
+                        newDeck =
+                            deck
+                                |> Deck.insert (Tuple.first selected)
+                    in
+                    ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnDeck }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         SetFocus newFocus ->
             ( { model | focus = newFocus }, Cmd.none )

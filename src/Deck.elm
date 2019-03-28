@@ -1,77 +1,46 @@
-module Deck exposing (Deck, current, fromList, isEmpty, move, moveWithPosition, next, previous, select, sort, toList)
+module Deck exposing (Deck, current, fromList, insert, isEmpty, next, previous, remove, select, sort, sortBy, toList)
 
 import List.Zipper as LZ exposing (Zipper(..))
 import Types exposing (..)
 
 
 type Deck a
-    = Deck (Maybe (Zipper ( a, Positions )))
+    = Deck (Maybe (Zipper a))
 
 
-type alias Positions =
-    { herePosition : Int, otherPosition : Maybe Int }
-
-
-move : (a -> b) -> ( Deck a, Deck b ) -> ( Deck a, Deck b )
-move conv ( fromDeck, toDeck ) =
-    case ( fromDeck, toDeck ) of
-        ( Deck (Just zipFrom), Deck (Just zipTo) ) ->
-            let
-                toMove =
-                    LZ.current zipFrom
-
-                ( newFromCurrent, _ ) =
-                    getNext zipFrom
-
-                newToBefore =
-                    LZ.before zipTo ++ [ LZ.current zipTo ]
-
-                newToCurrent =
-                    Tuple.mapFirst conv toMove
-
-                newToAfter =
-                    LZ.after zipTo
-            in
-            ( zipFrom
-                |> LZ.toList
-                |> List.filter (\i -> i /= toMove)
+insert : a -> Deck a -> Deck a
+insert newCurrent ((Deck zip_) as deck) =
+    case zip_ of
+        Just zip ->
+            (newCurrent :: LZ.toList zip)
                 |> LZ.fromList
                 |> Deck
-                |> select (\i -> i == newFromCurrent)
-            , LZ.from newToBefore newToCurrent newToAfter
-                |> Just
-                |> Deck
-            )
 
-        ( Deck (Just zipFrom), Deck Nothing ) ->
+        Nothing ->
+            Deck (LZ.fromList [ newCurrent ])
+
+
+remove : Deck a -> Deck a
+remove ((Deck zip_) as deck) =
+    case zip_ of
+        Just zip ->
             let
-                toMove =
-                    LZ.current zipFrom
+                nextSelected =
+                    getNext zip
 
-                ( newFromCurrent, _ ) =
-                    getNext zipFrom
+                preBefore =
+                    LZ.before zip
 
-                newToCurrent =
-                    Tuple.mapFirst conv toMove
+                preAfter =
+                    LZ.after zip
             in
-            ( zipFrom
-                |> LZ.toList
-                |> List.filter (\i -> i /= toMove)
+            (preBefore ++ preAfter)
                 |> LZ.fromList
+                |> Maybe.andThen (LZ.findFirst <| (==) nextSelected)
                 |> Deck
-                |> select (\i -> i == newFromCurrent)
-            , LZ.fromCons newToCurrent []
-                |> Just
-                |> Deck
-            )
 
-        ( Deck Nothing, _ ) ->
-            ( fromDeck, toDeck )
-
-
-moveWithPosition : (a -> b) -> RelativePosition Int -> ( Deck a, Deck b ) -> ( Deck a, Deck b )
-moveWithPosition conv pos ( fromDeck, toDeck ) =
-    ( fromDeck, toDeck )
+        Nothing ->
+            deck
 
 
 current : Deck a -> Maybe a
@@ -81,7 +50,7 @@ current (Deck mbz_) =
             Nothing
 
         Just zip ->
-            Just (LZ.current zip |> Tuple.first)
+            Just (LZ.current zip)
 
 
 select : (a -> Bool) -> Deck a -> Deck a
@@ -92,7 +61,7 @@ select predicate (Deck mbz_) =
 
         Just zip ->
             zip
-                |> LZ.findFirst (Tuple.first >> predicate)
+                |> LZ.findFirst predicate
                 |> Deck
 
 
@@ -124,42 +93,54 @@ previous (Deck zip_) =
             Deck (Just newZip)
 
 
-sort : SortOrder -> Bool -> Deck a -> Deck a
-sort sortOrder isReverse deck =
-    deck
+sort : Deck comparable -> Deck comparable
+sort ((Deck zip_) as deck) =
+    case zip_ of
+        Just zip ->
+            let
+                presortCurrent =
+                    LZ.current zip
+            in
+            zip
+                |> LZ.toList
+                |> List.sort
+                |> LZ.fromList
+                |> Maybe.andThen (LZ.findFirst <| (==) presortCurrent)
+                |> Deck
+
+        Nothing ->
+            deck
+
+
+sortBy : (a -> comparable) -> Deck a -> Deck a
+sortBy comp ((Deck zip_) as deck) =
+    case zip_ of
+        Just zip ->
+            let
+                presortCurrent =
+                    LZ.current zip
+            in
+            zip
+                |> LZ.toList
+                |> List.sortBy comp
+                |> LZ.fromList
+                |> Maybe.andThen (LZ.findFirst (\i -> i == presortCurrent))
+                |> Deck
+
+        Nothing ->
+            deck
 
 
 fromList : List a -> Deck a
 fromList list =
-    let
-        length =
-            List.length list
-
-        minInt =
-            -(2 ^ 31)
-
-        maxInt =
-            (2 ^ 31) - 1
-
-        mapFn : Int -> a -> ( a, { herePosition : Int, otherPosition : Maybe Int } )
-        mapFn i c =
-            ( c
-            , { herePosition = minInt + ((maxInt - minInt) // (length + 1)) * (i + 1)
-              , otherPosition = Nothing
-              }
-            )
-    in
-    list
-        |> List.indexedMap mapFn
-        |> LZ.fromList
-        |> Deck
+    Deck (LZ.fromList list)
 
 
 toList : Deck a -> List a
 toList (Deck mbz_) =
     case mbz_ of
         Just zipper ->
-            zipper |> LZ.toList |> List.map Tuple.first
+            zipper |> LZ.toList
 
         Nothing ->
             []
