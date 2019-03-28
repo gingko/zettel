@@ -12,8 +12,9 @@ insert : a -> Deck a -> Deck a
 insert newCurrent ((Deck zip_) as deck) =
     case zip_ of
         Just zip ->
-            (newCurrent :: LZ.toList zip)
+            (LZ.toList zip ++ [ newCurrent ])
                 |> LZ.fromList
+                |> Maybe.map LZ.last
                 |> Deck
 
         Nothing ->
