@@ -1,3 +1,7 @@
+body {
+  background-color: rgb(128,128,128);
+}
+
 #app {
   position: absolute;
   width: 100%;
@@ -5,7 +9,6 @@
   display : grid;
   grid-gap: 10px;
   grid-template-columns: 30% auto;
-  background-color: rgb(128,128,128);
 }
 
 #deck {
