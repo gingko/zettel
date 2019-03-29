@@ -27,7 +27,7 @@ type alias Model =
     { deck : Deck Card
     , workSurface : Deck Card
     , deckSearchField : String
-    , focus : Focus
+    , mode : Mode
     }
 
 
@@ -49,7 +49,7 @@ type CardState
     | Editing
 
 
-type Focus
+type Mode
     = OnDeck
     | OnWorkSurface CardState
 
@@ -76,7 +76,7 @@ defaultModel =
             [ Card 1 "Test 2" "content again" 0 (Just 250)
             ]
     , deckSearchField = ""
-    , focus = OnDeck
+    , mode = OnDeck
     }
 
 
@@ -97,16 +97,16 @@ type Msg
     | MoveUp
     | PullSelectedFromDeck
     | ReturnSelectedToDeck
-    | SetFocus Focus
-    | SelectCard Focus Int
+    | SetMode Mode
+    | SelectCard Mode Int
     | Keyboard String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ workSurface, deck, focus } as model) =
+update msg ({ workSurface, deck, mode } as model) =
     case msg of
         Next ->
-            case focus of
+            case mode of
                 OnDeck ->
                     ( { model | deck = Deck.next deck }, Cmd.none )
 
@@ -117,7 +117,7 @@ update msg ({ workSurface, deck, focus } as model) =
                     ( model, Cmd.none )
 
         Previous ->
-            case focus of
+            case mode of
                 OnDeck ->
                     ( { model | deck = Deck.previous deck }, Cmd.none )
 
@@ -147,7 +147,7 @@ update msg ({ workSurface, deck, focus } as model) =
                             identity
 
                 ( currentDeck, newModel ) =
-                    case focus of
+                    case mode of
                         OnDeck ->
                             ( deck, { model | deck = deck |> mapSort (newPosFn deck) sortFn } )
 
@@ -184,7 +184,7 @@ update msg ({ workSurface, deck, focus } as model) =
                                 |> Deck.insert (swapCard maxWorkPosition selected)
                                 |> Deck.sortBy .position
                     in
-                    ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnWorkSurface Normal }, Cmd.none )
+                    ( { model | deck = newDeck, workSurface = newWorkSurface, mode = OnWorkSurface Normal }, Cmd.none )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -213,23 +213,23 @@ update msg ({ workSurface, deck, focus } as model) =
                                 |> Deck.insert (swapCard maxDeckPosition selected)
                                 |> Deck.sortBy .position
                     in
-                    ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnDeck }, Cmd.none )
+                    ( { model | deck = newDeck, workSurface = newWorkSurface, mode = OnDeck }, Cmd.none )
 
                 Nothing ->
                     ( model, Cmd.none )
 
-        SetFocus newFocus ->
-            ( { model | focus = newFocus }, Cmd.none )
+        SetMode newMode ->
+            ( { model | mode = newMode }, Cmd.none )
 
-        SelectCard newFocus cardId ->
-            case newFocus of
+        SelectCard newMode cardId ->
+            case newMode of
                 OnDeck ->
-                    ( { model | deck = Deck.select (\c -> c.id == cardId) deck, focus = newFocus }
+                    ( { model | deck = Deck.select (\c -> c.id == cardId) deck, mode = newMode }
                     , Cmd.none
                     )
 
                 OnWorkSurface Normal ->
-                    ( { model | workSurface = Deck.select (\c -> c.id == cardId) workSurface, focus = newFocus }
+                    ( { model | workSurface = Deck.select (\c -> c.id == cardId) workSurface, mode = newMode }
                     , Cmd.none
                     )
 
@@ -237,12 +237,12 @@ update msg ({ workSurface, deck, focus } as model) =
                     ( model, Cmd.none )
 
         Keyboard keys ->
-            case ( keys, focus ) of
+            case ( keys, mode ) of
                 ( "left", OnWorkSurface Normal ) ->
-                    update (SetFocus OnDeck) model
+                    update (SetMode OnDeck) model
 
                 ( "right", OnDeck ) ->
-                    update (SetFocus (OnWorkSurface Normal)) model
+                    update (SetMode (OnWorkSurface Normal)) model
 
                 ( "up", _ ) ->
                     update Previous model
@@ -276,10 +276,10 @@ mapSort mapFn sortFn deck =
 
 
 view : Model -> Html Msg
-view { deck, workSurface, focus } =
+view { deck, workSurface, mode } =
     div [ id "app" ]
-        [ viewDeck (focus == OnDeck) ( Deck.current deck, deck |> Deck.toList )
-        , viewWorkSurface (focus == OnWorkSurface Normal) ( Deck.current workSurface, workSurface |> Deck.toList )
+        [ viewDeck (mode == OnDeck) ( Deck.current deck, deck |> Deck.toList )
+        , viewWorkSurface (mode == OnWorkSurface Normal) ( Deck.current workSurface, workSurface |> Deck.toList )
         ]
 
 
