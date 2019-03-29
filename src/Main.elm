@@ -95,6 +95,7 @@ type Msg
     | Next
     | Previous
     | MoveUp
+    | MoveDown
     | PullSelectedFromDeck
     | ReturnSelectedToDeck
     | SetMode Mode
@@ -142,6 +143,38 @@ update msg ({ workSurface, deck, mode } as model) =
 
                         Just (prevCard :: prevPrevCard :: _) ->
                             \c -> { c | position = (prevCard.position + prevPrevCard.position) // 2 }
+
+                        Nothing ->
+                            identity
+
+                ( currentDeck, newModel ) =
+                    case mode of
+                        OnDeck ->
+                            ( deck, { model | deck = deck |> mapSort (newPosFn deck) sortFn } )
+
+                        OnWorkSurface Normal ->
+                            ( workSurface, { model | workSurface = workSurface |> mapSort (newPosFn workSurface) sortFn } )
+
+                        OnWorkSurface Editing ->
+                            ( workSurface, model )
+            in
+            ( newModel, Cmd.none )
+
+        MoveDown ->
+            let
+                sortFn =
+                    .position
+
+                newPosFn d =
+                    case Deck.after d of
+                        Just [] ->
+                            identity
+
+                        Just [ nextCard ] ->
+                            \c -> { c | position = (nextCard.position + maxInt) // 2 }
+
+                        Just (nextCard :: nextNextCard :: _) ->
+                            \c -> { c | position = (nextCard.position + nextNextCard.position) // 2 }
 
                         Nothing ->
                             identity
@@ -258,6 +291,9 @@ update msg ({ workSurface, deck, mode } as model) =
 
                 ( "alt+up", _ ) ->
                     update MoveUp model
+
+                ( "alt+down", _ ) ->
+                    update MoveDown model
 
                 _ ->
                     ( model, Cmd.none )
