@@ -99,6 +99,7 @@ type Msg
     | Edit
     | Next
     | Previous
+    | MoveUp
     | PullSelectedFromDeck
     | ReturnSelectedToDeck
     | SetFocus Focus
@@ -124,6 +125,20 @@ update msg ({ workSurface, deck, focus } as model) =
 
                 OnWorkSurface ->
                     ( { model | workSurface = Deck.previous workSurface }, Cmd.none )
+
+        MoveUp ->
+            case focus of
+                OnDeck ->
+                    -- TODO : Moving API? Maybe:
+                    -- if it's already the first card, break
+                    -- if it's the second card, set it's position to: (minInt + first.pos) // 2
+                    -- if it's any other card, set it's position to: (first.pos + sec.pos) // 2
+                    -- Maybe a separate "Positions" module?
+                    -- Should we also randomize within that interval (sha1 of title & id, for instance?)
+                    ( model, Cmd.none )
+
+                OnWorkSurface ->
+                    ( model, Cmd.none )
 
         PullSelectedFromDeck ->
             let
@@ -211,6 +226,9 @@ update msg ({ workSurface, deck, focus } as model) =
 
                 ( "alt+right", OnDeck ) ->
                     update PullSelectedFromDeck model
+
+                ( "alt+up", _ ) ->
+                    update MoveUp model
 
                 _ ->
                     ( model, Cmd.none )
