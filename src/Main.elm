@@ -124,56 +124,46 @@ update msg ({ workSurface, deck, focus } as model) =
         MoveUp ->
             case focus of
                 OnDeck ->
-                    case Maybe.map List.reverse <| Deck.before deck of
-                        Just [] ->
-                            ( model, Cmd.none )
+                    let
+                        sortFn =
+                            .position
 
-                        Just [ prevCard ] ->
-                            let
-                                newDeck =
-                                    deck
-                                        |> Deck.mapCurrent (\c -> { c | position = (minInt + prevCard.position) // 2 })
-                                        |> Deck.sortBy .position
-                            in
-                            ( { model | deck = newDeck }, Cmd.none )
+                        newPosFn =
+                            case Maybe.map List.reverse <| Deck.before deck of
+                                Just [] ->
+                                    identity
 
-                        Just (prevCard :: prevPrevCard :: _) ->
-                            let
-                                newDeck =
-                                    deck
-                                        |> Deck.mapCurrent (\c -> { c | position = (prevCard.position + prevPrevCard.position) // 2 })
-                                        |> Deck.sortBy .position
-                            in
-                            ( { model | deck = newDeck }, Cmd.none )
+                                Just [ prevCard ] ->
+                                    \c -> { c | position = (minInt + prevCard.position) // 2 }
 
-                        Nothing ->
-                            ( model, Cmd.none )
+                                Just (prevCard :: prevPrevCard :: _) ->
+                                    \c -> { c | position = (prevCard.position + prevPrevCard.position) // 2 }
+
+                                Nothing ->
+                                    identity
+                    in
+                    ( { model | deck = deck |> mapSort newPosFn sortFn }, Cmd.none )
 
                 OnWorkSurface ->
-                    case Maybe.map List.reverse <| Deck.before workSurface of
-                        Just [] ->
-                            ( model, Cmd.none )
+                    let
+                        sortFn =
+                            Tuple.first >> .position
 
-                        Just [ ( prevCard, _ ) ] ->
-                            let
-                                newWorkSurface =
-                                    workSurface
-                                        |> Deck.mapCurrent (\( c, cs ) -> ( { c | position = (minInt + prevCard.position) // 2 }, cs ))
-                                        |> Deck.sortBy (Tuple.first >> .position)
-                            in
-                            ( { model | workSurface = newWorkSurface }, Cmd.none )
+                        newPosFn =
+                            case Maybe.map List.reverse <| Deck.before workSurface of
+                                Just [] ->
+                                    identity
 
-                        Just (( prevCard, _ ) :: ( prevPrevCard, _ ) :: _) ->
-                            let
-                                newWorkSurface =
-                                    workSurface
-                                        |> Deck.mapCurrent (\( c, cs ) -> ( { c | position = (prevCard.position + prevPrevCard.position) // 2 }, cs ))
-                                        |> Deck.sortBy (Tuple.first >> .position)
-                            in
-                            ( { model | workSurface = newWorkSurface }, Cmd.none )
+                                Just [ ( prevCard, _ ) ] ->
+                                    \( c, cs ) -> ( { c | position = (minInt + prevCard.position) // 2 }, cs )
 
-                        Nothing ->
-                            ( model, Cmd.none )
+                                Just (( prevCard, _ ) :: ( prevPrevCard, _ ) :: _) ->
+                                    \( c, cs ) -> ( { c | position = (prevCard.position + prevPrevCard.position) // 2 }, cs )
+
+                                Nothing ->
+                                    identity
+                    in
+                    ( { model | workSurface = workSurface |> mapSort newPosFn sortFn }, Cmd.none )
 
         PullSelectedFromDeck ->
             let
@@ -277,6 +267,11 @@ update msg ({ workSurface, deck, focus } as model) =
 
         _ ->
             ( model, Cmd.none )
+
+
+mapSort : (a -> a) -> (a -> comparable) -> Deck a -> Deck a
+mapSort mapFn sortFn deck =
+    deck |> Deck.mapCurrent mapFn |> Deck.sortBy sortFn
 
 
 
