@@ -25,7 +25,7 @@ main =
 
 type alias Model =
     { deck : Deck Card
-    , workSurface : Deck ( Card, CardState )
+    , workSurface : Deck Card
     , deckSearchField : String
     , focus : Focus
     }
@@ -51,7 +51,7 @@ type CardState
 
 type Focus
     = OnDeck
-    | OnWorkSurface
+    | OnWorkSurface CardState
 
 
 minInt =
@@ -73,7 +73,7 @@ defaultModel =
             ]
     , workSurface =
         Deck.fromList
-            [ ( Card 1 "Test 2" "content again" 0 (Just 250), Normal )
+            [ Card 1 "Test 2" "content again" 0 (Just 250)
             ]
     , deckSearchField = ""
     , focus = OnDeck
@@ -110,60 +110,54 @@ update msg ({ workSurface, deck, focus } as model) =
                 OnDeck ->
                     ( { model | deck = Deck.next deck }, Cmd.none )
 
-                OnWorkSurface ->
+                OnWorkSurface Normal ->
                     ( { model | workSurface = Deck.next workSurface }, Cmd.none )
+
+                OnWorkSurface Editing ->
+                    ( model, Cmd.none )
 
         Previous ->
             case focus of
                 OnDeck ->
                     ( { model | deck = Deck.previous deck }, Cmd.none )
 
-                OnWorkSurface ->
+                OnWorkSurface Normal ->
                     ( { model | workSurface = Deck.previous workSurface }, Cmd.none )
 
+                OnWorkSurface Editing ->
+                    ( model, Cmd.none )
+
         MoveUp ->
-            case focus of
-                OnDeck ->
-                    let
-                        sortFn =
-                            .position
+            let
+                sortFn =
+                    .position
 
-                        newPosFn =
-                            case Maybe.map List.reverse <| Deck.before deck of
-                                Just [] ->
-                                    identity
+                newPosFn d =
+                    case Maybe.map List.reverse <| Deck.before d of
+                        Just [] ->
+                            identity
 
-                                Just [ prevCard ] ->
-                                    \c -> { c | position = (minInt + prevCard.position) // 2 }
+                        Just [ prevCard ] ->
+                            \c -> { c | position = (minInt + prevCard.position) // 2 }
 
-                                Just (prevCard :: prevPrevCard :: _) ->
-                                    \c -> { c | position = (prevCard.position + prevPrevCard.position) // 2 }
+                        Just (prevCard :: prevPrevCard :: _) ->
+                            \c -> { c | position = (prevCard.position + prevPrevCard.position) // 2 }
 
-                                Nothing ->
-                                    identity
-                    in
-                    ( { model | deck = deck |> mapSort newPosFn sortFn }, Cmd.none )
+                        Nothing ->
+                            identity
 
-                OnWorkSurface ->
-                    let
-                        sortFn =
-                            Tuple.first >> .position
+                ( currentDeck, newModel ) =
+                    case focus of
+                        OnDeck ->
+                            ( deck, { model | deck = deck |> mapSort (newPosFn deck) sortFn } )
 
-                        newPosFn =
-                            case Maybe.map List.reverse <| Deck.before workSurface of
-                                Just [] ->
-                                    identity
+                        OnWorkSurface Normal ->
+                            ( workSurface, { model | workSurface = workSurface |> mapSort (newPosFn workSurface) sortFn } )
 
-                                Just [ ( prevCard, _ ) ] ->
-                                    \( c, cs ) -> ( { c | position = (minInt + prevCard.position) // 2 }, cs )
-
-                                Just (( prevCard, _ ) :: ( prevPrevCard, _ ) :: _) ->
-                                    \( c, cs ) -> ( { c | position = (prevCard.position + prevPrevCard.position) // 2 }, cs )
-
-                                Nothing ->
-                                    identity
-                    in
-                    ( { model | workSurface = workSurface |> mapSort newPosFn sortFn }, Cmd.none )
+                        OnWorkSurface Editing ->
+                            ( workSurface, model )
+            in
+            ( newModel, Cmd.none )
 
         PullSelectedFromDeck ->
             let
@@ -181,16 +175,16 @@ update msg ({ workSurface, deck, focus } as model) =
                         maxWorkPosition =
                             workSurface
                                 |> Deck.toList
-                                |> List.map (Tuple.first >> .position)
+                                |> List.map .position
                                 |> List.maximum
                                 |> Maybe.withDefault maxInt
 
                         newWorkSurface =
                             workSurface
-                                |> Deck.insert ( swapCard maxWorkPosition selected, Normal )
-                                |> Deck.sortBy (Tuple.first >> .position)
+                                |> Deck.insert (swapCard maxWorkPosition selected)
+                                |> Deck.sortBy .position
                     in
-                    ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnWorkSurface }, Cmd.none )
+                    ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnWorkSurface Normal }, Cmd.none )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -201,7 +195,7 @@ update msg ({ workSurface, deck, focus } as model) =
                     Deck.current workSurface
             in
             case selected_ of
-                Just ( selected, _ ) ->
+                Just selected ->
                     let
                         newWorkSurface =
                             workSurface
@@ -234,18 +228,21 @@ update msg ({ workSurface, deck, focus } as model) =
                     , Cmd.none
                     )
 
-                OnWorkSurface ->
-                    ( { model | workSurface = Deck.select (\( c, _ ) -> c.id == cardId) workSurface, focus = newFocus }
+                OnWorkSurface Normal ->
+                    ( { model | workSurface = Deck.select (\c -> c.id == cardId) workSurface, focus = newFocus }
                     , Cmd.none
                     )
 
+                OnWorkSurface Editing ->
+                    ( model, Cmd.none )
+
         Keyboard keys ->
             case ( keys, focus ) of
-                ( "left", OnWorkSurface ) ->
+                ( "left", OnWorkSurface Normal ) ->
                     update (SetFocus OnDeck) model
 
                 ( "right", OnDeck ) ->
-                    update (SetFocus OnWorkSurface) model
+                    update (SetFocus (OnWorkSurface Normal)) model
 
                 ( "up", _ ) ->
                     update Previous model
@@ -253,7 +250,7 @@ update msg ({ workSurface, deck, focus } as model) =
                 ( "down", _ ) ->
                     update Next model
 
-                ( "alt+left", OnWorkSurface ) ->
+                ( "alt+left", OnWorkSurface Normal ) ->
                     update ReturnSelectedToDeck model
 
                 ( "alt+right", OnDeck ) ->
@@ -282,7 +279,7 @@ view : Model -> Html Msg
 view { deck, workSurface, focus } =
     div [ id "app" ]
         [ viewDeck (focus == OnDeck) ( Deck.current deck, deck |> Deck.toList )
-        , viewWorkSurface (focus == OnWorkSurface) ( Deck.current workSurface, workSurface |> Deck.toList )
+        , viewWorkSurface (focus == OnWorkSurface Normal) ( Deck.current workSurface, workSurface |> Deck.toList )
         ]
 
 
@@ -304,16 +301,16 @@ viewDeck deckFocused ( currentCard_, cards ) =
         )
 
 
-viewWorkSurface : Bool -> ( Maybe ( Card, CardState ), List ( Card, CardState ) ) -> Html Msg
+viewWorkSurface : Bool -> ( Maybe Card, List Card ) -> Html Msg
 viewWorkSurface workSurfaceFocused ( currentCard_, cards ) =
     let
-        viewFn ( c, cs ) =
+        viewFn c =
             case currentCard_ of
-                Just ( currentCard, _ ) ->
-                    viewNormalCard (workSurfaceFocused && c.id == currentCard.id) ( c, cs )
+                Just currentCard ->
+                    viewNormalCard (workSurfaceFocused && c.id == currentCard.id) c
 
                 Nothing ->
-                    viewNormalCard False ( c, cs )
+                    viewNormalCard False c
     in
     div [ id "work-surface" ]
         (cards
@@ -337,12 +334,12 @@ viewCard isCurrent ({ title, content } as card) =
         ]
 
 
-viewNormalCard : Bool -> ( Card, CardState ) -> Html Msg
-viewNormalCard isCurrent ( { title, content } as card, cardState ) =
+viewNormalCard : Bool -> Card -> Html Msg
+viewNormalCard isCurrent ({ title, content } as card) =
     div
         [ id <| "card-" ++ String.fromInt card.id
         , classList [ ( "card", True ), ( "current", isCurrent ) ]
-        , onClick (SelectCard OnWorkSurface card.id)
+        , onClick (SelectCard (OnWorkSurface Normal) card.id)
         ]
         [ h3 [] [ text title ]
         , div [] [ text content ]
@@ -351,7 +348,7 @@ viewNormalCard isCurrent ( { title, content } as card, cardState ) =
 
 viewEditingCard : Card -> Html Msg
 viewEditingCard card =
-    viewNormalCard True ( card, Editing )
+    viewNormalCard True card
 
 
 
