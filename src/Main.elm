@@ -24,29 +24,24 @@ main =
 
 
 type alias Model =
-    { deck : Deck DeckCard
-    , workSurface : Deck WorkCard
+    { deck : Deck Card
+    , workSurface : Deck ( Card, CardState )
     , deckSearchField : String
     , focus : Focus
     }
 
 
-type alias DeckCard =
-    { id : Int, title : String, content : String, deckPosition : Int, workPosition : Maybe Int }
+type alias Card =
+    { id : Int, title : String, content : String, position : Int, otherPosition : Maybe Int }
 
 
-type alias WorkCard =
-    { id : Int, title : String, content : String, deckPosition : Maybe Int, workPosition : Int, cardState : CardState }
-
-
-deckToWorkCard : Int -> DeckCard -> WorkCard
-deckToWorkCard maxWorkPosition c =
-    { id = c.id, title = c.title, content = c.content, deckPosition = Just c.deckPosition, workPosition = c.workPosition |> Maybe.withDefault ((maxWorkPosition + maxInt) // 2), cardState = Normal }
-
-
-workCardToDeck : Int -> WorkCard -> DeckCard
-workCardToDeck maxDeckPosition c =
-    { id = c.id, title = c.title, content = c.content, deckPosition = c.deckPosition |> Maybe.withDefault ((maxDeckPosition + maxInt) // 2), workPosition = Just c.workPosition }
+swapCard : Int -> Card -> Card
+swapCard maxPosition c =
+    let
+        newPosition =
+            c.otherPosition |> Maybe.withDefault ((maxPosition + maxInt) // 2)
+    in
+    { id = c.id, title = c.title, content = c.content, position = newPosition, otherPosition = Just c.position }
 
 
 type CardState
@@ -70,15 +65,15 @@ maxInt =
 defaultModel =
     { deck =
         Deck.fromList
-            [ DeckCard 0 "Test" "content" -1000 Nothing
-            , DeckCard 2 "Second" "more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more." -500 Nothing
-            , DeckCard 3 "Another test" "Let's have some content lorem ipsum." 0 Nothing
-            , DeckCard 4 "YET Another test" "Let's have some content lorem ipsum." 500 Nothing
-            , DeckCard 5 "Dolorum" "Let's have some content lorem ipsum." 1000 Nothing
+            [ Card 0 "Test" "content" -1000 Nothing
+            , Card 2 "Second" "more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more.more stuff here and this one is longer. More more." -500 Nothing
+            , Card 3 "Another test" "Let's have some content lorem ipsum." 0 Nothing
+            , Card 4 "YET Another test" "Let's have some content lorem ipsum." 500 Nothing
+            , Card 5 "Dolorum" "Let's have some content lorem ipsum." 1000 Nothing
             ]
     , workSurface =
         Deck.fromList
-            [ WorkCard 1 "Test 2" "content again" (Just 250) 0 Normal
+            [ ( Card 1 "Test 2" "content again" 0 (Just 250), Normal )
             ]
     , deckSearchField = ""
     , focus = OnDeck
@@ -151,19 +146,19 @@ update msg ({ workSurface, deck, focus } as model) =
                         newDeck =
                             deck
                                 |> Deck.remove
-                                |> Deck.sortBy .deckPosition
+                                |> Deck.sortBy .position
 
                         maxWorkPosition =
                             workSurface
                                 |> Deck.toList
-                                |> List.map .workPosition
+                                |> List.map (Tuple.first >> .position)
                                 |> List.maximum
                                 |> Maybe.withDefault maxInt
 
                         newWorkSurface =
                             workSurface
-                                |> Deck.insert (deckToWorkCard maxWorkPosition selected)
-                                |> Deck.sortBy .workPosition
+                                |> Deck.insert ( swapCard maxWorkPosition selected, Normal )
+                                |> Deck.sortBy (Tuple.first >> .position)
                     in
                     ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnWorkSurface }, Cmd.none )
 
@@ -176,7 +171,7 @@ update msg ({ workSurface, deck, focus } as model) =
                     Deck.current workSurface
             in
             case selected_ of
-                Just selected ->
+                Just ( selected, _ ) ->
                     let
                         newWorkSurface =
                             workSurface
@@ -185,14 +180,14 @@ update msg ({ workSurface, deck, focus } as model) =
                         maxDeckPosition =
                             deck
                                 |> Deck.toList
-                                |> List.map .deckPosition
+                                |> List.map .position
                                 |> List.maximum
                                 |> Maybe.withDefault maxInt
 
                         newDeck =
                             deck
-                                |> Deck.insert (workCardToDeck maxDeckPosition selected)
-                                |> Deck.sortBy .deckPosition
+                                |> Deck.insert (swapCard maxDeckPosition selected)
+                                |> Deck.sortBy .position
                     in
                     ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnDeck }, Cmd.none )
 
@@ -210,7 +205,7 @@ update msg ({ workSurface, deck, focus } as model) =
                     )
 
                 OnWorkSurface ->
-                    ( { model | workSurface = Deck.select (\c -> c.id == cardId) workSurface, focus = newFocus }
+                    ( { model | workSurface = Deck.select (\( c, _ ) -> c.id == cardId) workSurface, focus = newFocus }
                     , Cmd.none
                     )
 
@@ -256,16 +251,16 @@ view { deck, workSurface, focus } =
         ]
 
 
-viewDeck : Bool -> ( Maybe DeckCard, List DeckCard ) -> Html Msg
+viewDeck : Bool -> ( Maybe Card, List Card ) -> Html Msg
 viewDeck deckFocused ( currentCard_, cards ) =
     let
         viewFn c =
             case currentCard_ of
                 Just currentCard ->
-                    ( c.id |> String.fromInt, viewDeckCard (deckFocused && c.id == currentCard.id) c )
+                    ( c.id |> String.fromInt, viewCard (deckFocused && c.id == currentCard.id) c )
 
                 Nothing ->
-                    ( c.id |> String.fromInt, viewDeckCard False c )
+                    ( c.id |> String.fromInt, viewCard False c )
     in
     Keyed.node "div"
         [ id "deck" ]
@@ -274,16 +269,16 @@ viewDeck deckFocused ( currentCard_, cards ) =
         )
 
 
-viewWorkSurface : Bool -> ( Maybe WorkCard, List WorkCard ) -> Html Msg
+viewWorkSurface : Bool -> ( Maybe ( Card, CardState ), List ( Card, CardState ) ) -> Html Msg
 viewWorkSurface workSurfaceFocused ( currentCard_, cards ) =
     let
-        viewFn c =
+        viewFn ( c, cs ) =
             case currentCard_ of
-                Just currentCard ->
-                    viewNormalCard (workSurfaceFocused && c.id == currentCard.id) c
+                Just ( currentCard, _ ) ->
+                    viewNormalCard (workSurfaceFocused && c.id == currentCard.id) ( c, cs )
 
                 Nothing ->
-                    viewNormalCard False c
+                    viewNormalCard False ( c, cs )
     in
     div [ id "work-surface" ]
         (cards
@@ -295,8 +290,8 @@ viewWorkSurface workSurfaceFocused ( currentCard_, cards ) =
 -- CARD VIEWS
 
 
-viewDeckCard : Bool -> DeckCard -> Html Msg
-viewDeckCard isCurrent ({ title, content } as card) =
+viewCard : Bool -> Card -> Html Msg
+viewCard isCurrent ({ title, content } as card) =
     div
         [ id <| "card-" ++ String.fromInt card.id
         , classList [ ( "deck-card", True ), ( "current", isCurrent ) ]
@@ -307,8 +302,8 @@ viewDeckCard isCurrent ({ title, content } as card) =
         ]
 
 
-viewNormalCard : Bool -> WorkCard -> Html Msg
-viewNormalCard isCurrent ({ title, content } as card) =
+viewNormalCard : Bool -> ( Card, CardState ) -> Html Msg
+viewNormalCard isCurrent ( { title, content } as card, cardState ) =
     div
         [ id <| "card-" ++ String.fromInt card.id
         , classList [ ( "card", True ), ( "current", isCurrent ) ]
@@ -319,9 +314,9 @@ viewNormalCard isCurrent ({ title, content } as card) =
         ]
 
 
-viewEditingCard : WorkCard -> Html Msg
+viewEditingCard : Card -> Html Msg
 viewEditingCard card =
-    viewNormalCard True card
+    viewNormalCard True ( card, Editing )
 
 
 
