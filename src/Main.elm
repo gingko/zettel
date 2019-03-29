@@ -124,16 +124,56 @@ update msg ({ workSurface, deck, focus } as model) =
         MoveUp ->
             case focus of
                 OnDeck ->
-                    -- TODO : Moving API? Maybe:
-                    -- if it's already the first card, break
-                    -- if it's the second card, set it's position to: (minInt + first.pos) // 2
-                    -- if it's any other card, set it's position to: (first.pos + sec.pos) // 2
-                    -- Maybe a separate "Positions" module?
-                    -- Should we also randomize within that interval (sha1 of title & id, for instance?)
-                    ( model, Cmd.none )
+                    case Maybe.map List.reverse <| Deck.before deck of
+                        Just [] ->
+                            ( model, Cmd.none )
+
+                        Just [ prevCard ] ->
+                            let
+                                newDeck =
+                                    deck
+                                        |> Deck.mapCurrent (\c -> { c | position = (minInt + prevCard.position) // 2 })
+                                        |> Deck.sortBy .position
+                            in
+                            ( { model | deck = newDeck }, Cmd.none )
+
+                        Just (prevCard :: prevPrevCard :: _) ->
+                            let
+                                newDeck =
+                                    deck
+                                        |> Deck.mapCurrent (\c -> { c | position = (prevCard.position + prevPrevCard.position) // 2 })
+                                        |> Deck.sortBy .position
+                            in
+                            ( { model | deck = newDeck }, Cmd.none )
+
+                        Nothing ->
+                            ( model, Cmd.none )
 
                 OnWorkSurface ->
-                    ( model, Cmd.none )
+                    case Maybe.map List.reverse <| Deck.before workSurface of
+                        Just [] ->
+                            ( model, Cmd.none )
+
+                        Just [ ( prevCard, _ ) ] ->
+                            let
+                                newWorkSurface =
+                                    workSurface
+                                        |> Deck.mapCurrent (\( c, cs ) -> ( { c | position = (minInt + prevCard.position) // 2 }, cs ))
+                                        |> Deck.sortBy (Tuple.first >> .position)
+                            in
+                            ( { model | workSurface = newWorkSurface }, Cmd.none )
+
+                        Just (( prevCard, _ ) :: ( prevPrevCard, _ ) :: _) ->
+                            let
+                                newWorkSurface =
+                                    workSurface
+                                        |> Deck.mapCurrent (\( c, cs ) -> ( { c | position = (prevCard.position + prevPrevCard.position) // 2 }, cs ))
+                                        |> Deck.sortBy (Tuple.first >> .position)
+                            in
+                            ( { model | workSurface = newWorkSurface }, Cmd.none )
+
+                        Nothing ->
+                            ( model, Cmd.none )
 
         PullSelectedFromDeck ->
             let
