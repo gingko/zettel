@@ -36,17 +36,17 @@ type alias DeckCard =
 
 
 type alias WorkCard =
-    { id : Int, title : String, content : String, deckPosition : Int, workPosition : Int, cardState : CardState }
+    { id : Int, title : String, content : String, deckPosition : Maybe Int, workPosition : Int, cardState : CardState }
 
 
 deckToWorkCard : Int -> DeckCard -> WorkCard
 deckToWorkCard maxWorkPosition c =
-    { id = c.id, title = c.title, content = c.content, deckPosition = c.deckPosition, workPosition = c.workPosition |> Maybe.withDefault ((maxWorkPosition + maxInt) // 2), cardState = Normal }
+    { id = c.id, title = c.title, content = c.content, deckPosition = Just c.deckPosition, workPosition = c.workPosition |> Maybe.withDefault ((maxWorkPosition + maxInt) // 2), cardState = Normal }
 
 
-workCardToDeck : WorkCard -> DeckCard
-workCardToDeck c =
-    { id = c.id, title = c.title, content = c.content, deckPosition = c.deckPosition, workPosition = Just c.workPosition }
+workCardToDeck : Int -> WorkCard -> DeckCard
+workCardToDeck maxDeckPosition c =
+    { id = c.id, title = c.title, content = c.content, deckPosition = c.deckPosition |> Maybe.withDefault ((maxDeckPosition + maxInt) // 2), workPosition = Just c.workPosition }
 
 
 type CardState
@@ -78,7 +78,7 @@ defaultModel =
             ]
     , workSurface =
         Deck.fromList
-            [ WorkCard 1 "Test 2" "content again" 250 0 Normal
+            [ WorkCard 1 "Test 2" "content again" (Just 250) 0 Normal
             ]
     , deckSearchField = ""
     , focus = OnDeck
@@ -182,9 +182,16 @@ update msg ({ workSurface, deck, focus } as model) =
                             workSurface
                                 |> Deck.remove
 
+                        maxDeckPosition =
+                            deck
+                                |> Deck.toList
+                                |> List.map .deckPosition
+                                |> List.maximum
+                                |> Maybe.withDefault maxInt
+
                         newDeck =
                             deck
-                                |> Deck.insert (workCardToDeck selected)
+                                |> Deck.insert (workCardToDeck maxDeckPosition selected)
                                 |> Deck.sortBy .deckPosition
                     in
                     ( { model | deck = newDeck, workSurface = newWorkSurface, focus = OnDeck }, Cmd.none )

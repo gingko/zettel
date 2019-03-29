@@ -1,6 +1,6 @@
 module Deck exposing (Deck, current, fromList, insert, isEmpty, next, previous, remove, select, sort, sortBy, toList)
 
-import List.Zipper as LZ exposing (Zipper(..))
+import List.Zipper as LZ exposing (Zipper)
 import Types exposing (..)
 
 
