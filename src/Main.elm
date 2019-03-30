@@ -24,15 +24,11 @@ main =
 
 
 type alias Model =
-    { deck : Deck Card
-    , workSurface : Deck Card
+    { deck : Deck
+    , workSurface : Deck
     , deckSearchField : String
     , mode : Mode
     }
-
-
-type alias Card =
-    { id : Int, title : String, content : String, position : Int, otherPosition : Maybe Int }
 
 
 swapCard : Int -> Card -> Card
@@ -52,14 +48,6 @@ type CardState
 type Mode
     = OnDeck
     | OnWorkSurface CardState
-
-
-minInt =
-    -2 ^ 31
-
-
-maxInt =
-    2 ^ 31 - 1
 
 
 defaultModel =
@@ -129,68 +117,26 @@ update msg ({ workSurface, deck, mode } as model) =
                     ( model, Cmd.none )
 
         MoveUp ->
-            let
-                sortFn =
-                    .position
+            case mode of
+                OnDeck ->
+                    ( { model | deck = Deck.moveDelta -1 deck }, Cmd.none )
 
-                newPosFn d =
-                    case Maybe.map List.reverse <| Deck.before d of
-                        Just [] ->
-                            identity
+                OnWorkSurface Normal ->
+                    ( { model | workSurface = Deck.moveDelta -1 workSurface }, Cmd.none )
 
-                        Just [ prevCard ] ->
-                            \c -> { c | position = (minInt + prevCard.position) // 2 }
-
-                        Just (prevCard :: prevPrevCard :: _) ->
-                            \c -> { c | position = (prevCard.position + prevPrevCard.position) // 2 }
-
-                        Nothing ->
-                            identity
-
-                ( currentDeck, newModel ) =
-                    case mode of
-                        OnDeck ->
-                            ( deck, { model | deck = deck |> mapSort (newPosFn deck) sortFn } )
-
-                        OnWorkSurface Normal ->
-                            ( workSurface, { model | workSurface = workSurface |> mapSort (newPosFn workSurface) sortFn } )
-
-                        OnWorkSurface Editing ->
-                            ( workSurface, model )
-            in
-            ( newModel, Cmd.none )
+                OnWorkSurface Editing ->
+                    ( model, Cmd.none )
 
         MoveDown ->
-            let
-                sortFn =
-                    .position
+            case mode of
+                OnDeck ->
+                    ( { model | deck = Deck.moveDelta 1 deck }, Cmd.none )
 
-                newPosFn d =
-                    case Deck.after d of
-                        Just [] ->
-                            identity
+                OnWorkSurface Normal ->
+                    ( { model | workSurface = Deck.moveDelta 1 workSurface }, Cmd.none )
 
-                        Just [ nextCard ] ->
-                            \c -> { c | position = (nextCard.position + maxInt) // 2 }
-
-                        Just (nextCard :: nextNextCard :: _) ->
-                            \c -> { c | position = (nextCard.position + nextNextCard.position) // 2 }
-
-                        Nothing ->
-                            identity
-
-                ( currentDeck, newModel ) =
-                    case mode of
-                        OnDeck ->
-                            ( deck, { model | deck = deck |> mapSort (newPosFn deck) sortFn } )
-
-                        OnWorkSurface Normal ->
-                            ( workSurface, { model | workSurface = workSurface |> mapSort (newPosFn workSurface) sortFn } )
-
-                        OnWorkSurface Editing ->
-                            ( workSurface, model )
-            in
-            ( newModel, Cmd.none )
+                OnWorkSurface Editing ->
+                    ( model, Cmd.none )
 
         PullSelectedFromDeck ->
             let
@@ -300,11 +246,6 @@ update msg ({ workSurface, deck, mode } as model) =
 
         _ ->
             ( model, Cmd.none )
-
-
-mapSort : (a -> a) -> (a -> comparable) -> Deck a -> Deck a
-mapSort mapFn sortFn deck =
-    deck |> Deck.mapCurrent mapFn |> Deck.sortBy sortFn
 
 
 

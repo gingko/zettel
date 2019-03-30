@@ -1,19 +1,24 @@
-module Deck exposing (Deck, after, before, current, fromList, insert, isEmpty, map, mapCurrent, next, previous, remove, select, sort, sortBy, toList)
+module Deck exposing (Card, Deck, after, before, current, fromList, insert, isEmpty, mapCurrent, moveDelta, next, previous, remove, select, sort, sortBy, toList)
 
+import List.Extra as ListExtra
 import List.Zipper as LZ exposing (Zipper)
 import Types exposing (..)
 
 
-type Deck a
-    = Deck (Maybe (Zipper a))
+type Deck
+    = Deck (Maybe (Zipper Card))
 
 
-fromList : List a -> Deck a
+type alias Card =
+    { id : Int, title : String, content : String, position : Int, otherPosition : Maybe Int }
+
+
+fromList : List Card -> Deck
 fromList list =
     Deck (LZ.fromList list)
 
 
-toList : Deck a -> List a
+toList : Deck -> List Card
 toList (Deck mbz_) =
     case mbz_ of
         Just zipper ->
@@ -23,7 +28,7 @@ toList (Deck mbz_) =
             []
 
 
-isEmpty : Deck a -> Bool
+isEmpty : Deck -> Bool
 isEmpty (Deck mbz_) =
     mbz_ == Nothing
 
@@ -32,7 +37,45 @@ isEmpty (Deck mbz_) =
 -- MODIFIERS
 
 
-insert : a -> Deck a -> Deck a
+moveDelta : Int -> Deck -> Deck
+moveDelta delta (Deck zip_) =
+    let
+        ( zipPart, maybeReverse, endValue ) =
+            if delta < 0 then
+                ( LZ.before, List.reverse, minInt )
+
+            else
+                ( LZ.after, identity, maxInt )
+
+        ( prev1_, prev2_ ) =
+            ( zip_
+                |> Maybe.map zipPart
+                |> Maybe.map maybeReverse
+                |> Maybe.andThen (ListExtra.getAt (abs delta - 1))
+            , zip_
+                |> Maybe.map zipPart
+                |> Maybe.map maybeReverse
+                |> Maybe.andThen (ListExtra.getAt (abs delta))
+            )
+
+        updatePosFn =
+            case ( prev1_, prev2_ ) of
+                ( Just prev1, Just prev2 ) ->
+                    \c -> { c | position = (prev1.position + prev2.position) // 2 }
+
+                ( Just prev1, Nothing ) ->
+                    \c -> { c | position = (prev1.position + endValue) // 2 }
+
+                _ ->
+                    identity
+    in
+    zip_
+        |> Maybe.map (LZ.mapCurrent updatePosFn)
+        |> Deck
+        |> sort
+
+
+insert : Card -> Deck -> Deck
 insert newCurrent ((Deck zip_) as deck) =
     case zip_ of
         Just zip ->
@@ -45,7 +88,7 @@ insert newCurrent ((Deck zip_) as deck) =
             Deck (LZ.fromList [ newCurrent ])
 
 
-remove : Deck a -> Deck a
+remove : Deck -> Deck
 remove ((Deck zip_) as deck) =
     case zip_ of
         Just zip ->
@@ -68,7 +111,7 @@ remove ((Deck zip_) as deck) =
             deck
 
 
-sort : Deck comparable -> Deck comparable
+sort : Deck -> Deck
 sort ((Deck zip_) as deck) =
     case zip_ of
         Just zip ->
@@ -78,7 +121,7 @@ sort ((Deck zip_) as deck) =
             in
             zip
                 |> LZ.toList
-                |> List.sort
+                |> List.sortBy .position
                 |> LZ.fromList
                 |> Maybe.andThen (LZ.findFirst <| (==) presortCurrent)
                 |> Deck
@@ -87,7 +130,7 @@ sort ((Deck zip_) as deck) =
             deck
 
 
-sortBy : (a -> comparable) -> Deck a -> Deck a
+sortBy : (Card -> comparable) -> Deck -> Deck
 sortBy comp ((Deck zip_) as deck) =
     case zip_ of
         Just zip ->
@@ -106,14 +149,7 @@ sortBy comp ((Deck zip_) as deck) =
             deck
 
 
-map : (a -> b) -> Deck a -> Deck b
-map mapFn (Deck zip_) =
-    zip_
-        |> Maybe.map (LZ.map mapFn)
-        |> Deck
-
-
-mapCurrent : (a -> a) -> Deck a -> Deck a
+mapCurrent : (Card -> Card) -> Deck -> Deck
 mapCurrent mapFn (Deck zip_) =
     zip_
         |> Maybe.map (LZ.mapCurrent mapFn)
@@ -124,7 +160,7 @@ mapCurrent mapFn (Deck zip_) =
 -- ACCESSORS
 
 
-current : Deck a -> Maybe a
+current : Deck -> Maybe Card
 current (Deck mbz_) =
     case mbz_ of
         Nothing ->
@@ -134,12 +170,12 @@ current (Deck mbz_) =
             Just (LZ.current zip)
 
 
-before : Deck a -> Maybe (List a)
+before : Deck -> Maybe (List Card)
 before (Deck zip_) =
     Maybe.map LZ.before zip_
 
 
-after : Deck a -> Maybe (List a)
+after : Deck -> Maybe (List Card)
 after (Deck zip_) =
     Maybe.map LZ.after zip_
 
@@ -148,7 +184,7 @@ after (Deck zip_) =
 -- SELECTORS
 
 
-select : (a -> Bool) -> Deck a -> Deck a
+select : (Card -> Bool) -> Deck -> Deck
 select predicate (Deck mbz_) =
     case mbz_ of
         Nothing ->
@@ -160,7 +196,7 @@ select predicate (Deck mbz_) =
                 |> Deck
 
 
-next : Deck a -> Deck a
+next : Deck -> Deck
 next (Deck zip_) =
     let
         newZip_ =
@@ -174,7 +210,7 @@ next (Deck zip_) =
             Deck (Just newZip)
 
 
-previous : Deck a -> Deck a
+previous : Deck -> Deck
 previous (Deck zip_) =
     let
         newZip_ =

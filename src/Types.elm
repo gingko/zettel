@@ -1,4 +1,4 @@
-module Types exposing (RelativePosition, SortOrder)
+module Types exposing (RelativePosition, SortOrder, maxInt, minInt)
 
 
 type RelativePosition a
@@ -14,3 +14,11 @@ type SortOrder
     | LastModified
     | LastCreated
     | Random Int
+
+
+minInt =
+    -2 ^ 31
+
+
+maxInt =
+    2 ^ 31 - 1
