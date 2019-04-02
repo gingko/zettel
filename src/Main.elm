@@ -284,12 +284,13 @@ viewWorkSurface workSurfaceFocused ( currentCard_, cards ) =
         viewFn c =
             case currentCard_ of
                 Just currentCard ->
-                    viewNormalCard (workSurfaceFocused && c.id == currentCard.id) c
+                    ( c.id |> String.fromInt, viewNormalCard (workSurfaceFocused && c.id == currentCard.id) c )
 
                 Nothing ->
-                    viewNormalCard False c
+                    ( c.id |> String.fromInt, viewNormalCard False c )
     in
-    div [ id "work-surface" ]
+    Keyed.node "div"
+        [ id "work-surface" ]
         (cards
             |> List.map viewFn
         )
