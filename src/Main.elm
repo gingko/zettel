@@ -348,10 +348,11 @@ viewEditingCard ({ title, content } as card) =
         [ id <| "card-" ++ String.fromInt card.id
         , classList [ ( "card", True ), ( "editing", True ) ]
         ]
-        [ textarea
+        [ h3 [] [ text title ]
+        , textarea
             [ id ("card-edit-" ++ String.fromInt card.id)
             , class "mousetrap"
-            , value (title ++ "\n" ++ content)
+            , value content
             ]
             []
         ]
