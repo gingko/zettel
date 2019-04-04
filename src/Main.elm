@@ -94,6 +94,14 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({ workSurface, deck, mode } as model) =
     case msg of
+        Edit ->
+            case mode of
+                OnWorkSurface Normal ->
+                    ( { model | mode = OnWorkSurface Editing }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
+
         Next ->
             case mode of
                 OnDeck ->
@@ -241,6 +249,9 @@ update msg ({ workSurface, deck, mode } as model) =
                 ( "alt+down", _ ) ->
                     update MoveDown model
 
+                ( "enter", _ ) ->
+                    update Edit model
+
                 _ ->
                     ( model, Cmd.none )
 
@@ -256,7 +267,7 @@ view : Model -> Html Msg
 view { deck, workSurface, mode } =
     div [ id "app" ]
         [ viewDeck (mode == OnDeck) ( Deck.current deck, deck |> Deck.toList )
-        , viewWorkSurface (mode == OnWorkSurface Normal) ( Deck.current workSurface, workSurface |> Deck.toList )
+        , viewWorkSurface mode ( Deck.current workSurface, workSurface |> Deck.toList )
         ]
 
 
@@ -278,15 +289,21 @@ viewDeck deckFocused ( currentCard_, cards ) =
         )
 
 
-viewWorkSurface : Bool -> ( Maybe Card, List Card ) -> Html Msg
-viewWorkSurface workSurfaceFocused ( currentCard_, cards ) =
+viewWorkSurface : Mode -> ( Maybe Card, List Card ) -> Html Msg
+viewWorkSurface mode ( currentCard_, cards ) =
     let
         viewFn c =
-            case currentCard_ of
-                Just currentCard ->
-                    ( c.id |> String.fromInt, viewNormalCard (workSurfaceFocused && c.id == currentCard.id) c )
+            case ( currentCard_, mode ) of
+                ( Just currentCard, OnWorkSurface Normal ) ->
+                    ( c.id |> String.fromInt, viewNormalCard (c.id == currentCard.id) c )
 
-                Nothing ->
+                ( Just currentCard, OnWorkSurface Editing ) ->
+                    ( c.id |> String.fromInt, viewEditingCard c )
+
+                ( Nothing, OnWorkSurface _ ) ->
+                    ( c.id |> String.fromInt, viewNormalCard False c )
+
+                ( _, OnDeck ) ->
                     ( c.id |> String.fromInt, viewNormalCard False c )
     in
     Keyed.node "div"
@@ -325,8 +342,14 @@ viewNormalCard isCurrent ({ title, content } as card) =
 
 
 viewEditingCard : Card -> Html Msg
-viewEditingCard card =
-    viewNormalCard True card
+viewEditingCard ({ title, content } as card) =
+    div
+        [ id <| "card-" ++ String.fromInt card.id
+        , classList [ ( "card", True ), ( "editing", True ) ]
+        ]
+        [ h3 [] [ text title ]
+        , div [] [ text content ]
+        ]
 
 
 

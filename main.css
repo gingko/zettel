@@ -58,6 +58,12 @@ body {
   box-shadow : 0 0 8px green;
 }
 
+
+.editing {
+  background-color: white;
+  box-shadow : 0 0 8px blue;
+}
+
 .deck-card.current {
   margin-bottom: 3px;
   max-height: 60px;
