@@ -293,18 +293,33 @@ viewWorkSurface : Mode -> ( Maybe Card, List Card ) -> Html Msg
 viewWorkSurface mode ( currentCard_, cards ) =
     let
         viewFn c =
-            case ( currentCard_, mode ) of
-                ( Just currentCard, OnWorkSurface Normal ) ->
+            case ( mode, currentCard_ ) of
+                ( OnWorkSurface Normal, Just currentCard ) ->
                     ( c.id |> String.fromInt, viewNormalCard (c.id == currentCard.id) c )
 
-                ( Just currentCard, OnWorkSurface Editing ) ->
-                    ( c.id |> String.fromInt, viewEditingCard c )
+                ( OnWorkSurface Editing, Just currentCard ) ->
+                    if c.id == currentCard.id then
+                        ( c.id |> String.fromInt, viewEditingCard c )
 
-                ( Nothing, OnWorkSurface _ ) ->
+                    else
+                        ( c.id |> String.fromInt, viewNormalCard False c )
+
+                _ ->
                     ( c.id |> String.fromInt, viewNormalCard False c )
 
-                ( _, OnDeck ) ->
-                    ( c.id |> String.fromInt, viewNormalCard False c )
+        {- case ( currentCard_, mode ) of
+           ( Just currentCard, OnWorkSurface Normal ) ->
+               ( c.id |> String.fromInt, viewNormalCard (c.id == currentCard.id) c )
+
+           ( Just currentCard, OnWorkSurface Editing ) ->
+               ( c.id |> String.fromInt, viewEditingCard c )
+
+           ( Nothing, OnWorkSurface _ ) ->
+               ( c.id |> String.fromInt, viewNormalCard False c )
+
+           ( _, OnDeck ) ->
+               ( c.id |> String.fromInt, viewNormalCard False c )
+        -}
     in
     Keyed.node "div"
         [ id "work-surface" ]
@@ -347,8 +362,12 @@ viewEditingCard ({ title, content } as card) =
         [ id <| "card-" ++ String.fromInt card.id
         , classList [ ( "card", True ), ( "editing", True ) ]
         ]
-        [ h3 [] [ text title ]
-        , div [] [ text content ]
+        [ textarea
+            [ id ("card-edit-" ++ String.fromInt card.id)
+            , class "mousetrap"
+            , value (title ++ "\n" ++ content)
+            ]
+            []
         ]
 
 
