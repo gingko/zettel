@@ -64,6 +64,28 @@ body {
   box-shadow : 0 0 8px blue;
 }
 
+.editing textarea {
+  display: block;
+  background: transparent;
+  overflow-x: hidden;
+  resize: none;
+  border: none;
+  outline: none;
+  max-height: 600px;
+  min-height: 60px;
+  width: 100%;
+  text-shadow: -1px -1px 0px rgba(0,0,0,0.1), 1px 1px 0px rgba(255,255,255,0.8);
+  color: hsl(27,28%,22%);
+  font-size: 16px;
+  line-height: 23px;
+  padding: 5px 15px;
+  font-family: 'Droid Sans Mono', monospace;
+}
+.editing textarea::first-line {
+  font-size: 20px;
+  font-weight: bold;
+}
+
 .deck-card.current {
   margin-bottom: 3px;
   max-height: 60px;

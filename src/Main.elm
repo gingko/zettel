@@ -306,20 +306,6 @@ viewWorkSurface mode ( currentCard_, cards ) =
 
                 _ ->
                     ( c.id |> String.fromInt, viewNormalCard False c )
-
-        {- case ( currentCard_, mode ) of
-           ( Just currentCard, OnWorkSurface Normal ) ->
-               ( c.id |> String.fromInt, viewNormalCard (c.id == currentCard.id) c )
-
-           ( Just currentCard, OnWorkSurface Editing ) ->
-               ( c.id |> String.fromInt, viewEditingCard c )
-
-           ( Nothing, OnWorkSurface _ ) ->
-               ( c.id |> String.fromInt, viewNormalCard False c )
-
-           ( _, OnDeck ) ->
-               ( c.id |> String.fromInt, viewNormalCard False c )
-        -}
     in
     Keyed.node "div"
         [ id "work-surface" ]
